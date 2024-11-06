@@ -1,4 +1,3 @@
-from debugpy.adapter import access_token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -22,7 +21,7 @@ class TestView(APIView):
         return Response(res)
 
 class LoginView(APIView):
-    permission_classes = [IsAuthenticated]  # Allow any user (authenticated or not) to hit this endpoint
+    permission_classes = [AllowAny]  # Allow any user (authenticated or not) to hit this endpoint
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
