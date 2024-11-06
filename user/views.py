@@ -20,6 +20,7 @@ class TestView(APIView):
         }
         return Response(res)
 
+
 class LoginView(APIView):
     permission_classes = [AllowAny]  # Allow any user (authenticated or not) to hit this endpoint
 
@@ -51,19 +52,15 @@ class LoginView(APIView):
             }
             return Response(res, status=status.HTTP_401_UNAUTHORIZED)
 
-# class JwtTestView(APIView):
-#     permission_classes = [IsAuthenticated]  # Require authentication
-#     authentication_classes = [JWTAuthentication]
-#
-#     def get(self, request):
-#         user = SysUser.objects.get(username='admin', password='test')
-#         # Generate tokens
-#         refresh = RefreshToken.for_user(user)
-#         access_token = str(refresh.access_token)
-#
-#         res = {
-#             'code': 200,
-#             'data': access_token,
-#             'refresh': str(refresh)
-#         }
-#         return JsonResponse(res)
+
+class UserInfoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        data = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+        }
+        return Response({'code': 200, 'data': data})
