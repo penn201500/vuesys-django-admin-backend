@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import pymysql
+import rest_framework_simplejwt
 
 pymysql.install_as_MySQLdb()
 
@@ -51,14 +52,14 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework_simplejwt.authentication.SlidingTokenAuthentication',
     ),
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1), # total time the refresh token is valid
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5), # lifetime of the sliding token before the user needs to login again
 }
 
 MIDDLEWARE = [
