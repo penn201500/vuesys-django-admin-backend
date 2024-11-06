@@ -15,11 +15,18 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf.urls.i18n import i18n_patterns
-# from django.contrib import admin
+from django.contrib import admin
 from django.urls import path, include
+from rest_framework_simplejwt import views as jwt_views
 
 urlpatterns = i18n_patterns(
-    # path("admin/", admin.site.urls),
+    path("admin/", admin.site.urls),
+    # JWT token endpoints
+    path('api/token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
+    # Optional: For token verification and blacklisting
+    path('api/token/verify/', jwt_views.TokenVerifyView.as_view(), name='token_verify'),
+    path('api/token/blacklist/', jwt_views.TokenBlacklistView.as_view(), name='token_blacklist'),
     path("user/", include('user.urls')),
     path("role/", include('role.urls')),
     path("menu/", include('menu.urls')),

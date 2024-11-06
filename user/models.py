@@ -1,10 +1,8 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
-class SysUser(models.Model):
-    id = models.AutoField(primary_key=True)
-    username = models.CharField(max_length=100, unique=True, verbose_name='User Name')
-    password = models.CharField(max_length=100, verbose_name='Password')
+class SysUser(AbstractUser):
     avatar = models.CharField(max_length=255, null=True, verbose_name='Avatar')
     email = models.CharField(max_length=100, null=True, verbose_name='Email')
     phone = models.CharField(max_length=11, null=True, verbose_name='Phone')
