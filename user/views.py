@@ -8,23 +8,16 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
-from .serializers import LoginSerializer
 from user.models import SysUser
 from datetime import datetime, timezone
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import CustomTokenObtainPairSerializer
 
 
 # Create your views here.
-class TestView(APIView):
-    permission_classes = [AllowAny]  # No authentication required
-
-    def get(self, request):
-        users = list(SysUser.objects.all().values())
-        res = {
-            'code': 200,
-            'data': users
-        }
-        return Response(res)
-
+# Replace the LoginView with the following code
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 # @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
