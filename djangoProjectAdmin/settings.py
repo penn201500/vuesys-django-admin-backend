@@ -13,6 +13,36 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import pymysql
+import os
+from dotenv import load_dotenv
+
+# Load variables from .env file
+load_dotenv()
+
+# Retrieve the CORS_ALLOWED_ORIGINS variable
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'DELETE',
+    'OPTIONS',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Only set to True if your frontend needs to send cookies or HTTP authentication headers
+CORS_ALLOW_CREDENTIALS = False
 
 pymysql.install_as_MySQLdb()
 
@@ -42,6 +72,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',  # Added for token blacklisting
+    'corsheaders',
     'user.apps.UserConfig',
     'role.apps.RoleConfig',
     'menu.apps.MenuConfig',
@@ -57,14 +88,15 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),        # Access token lifetime
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),          # Refresh token lifetime
-    'ROTATE_REFRESH_TOKENS': True,                        # Rotate refresh tokens on refresh
-    'BLACKLIST_AFTER_ROTATION': True,                     # Blacklist old refresh tokens
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Access token lifetime
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Refresh token lifetime
+    'ROTATE_REFRESH_TOKENS': True,  # Rotate refresh tokens on refresh
+    'BLACKLIST_AFTER_ROTATION': True,  # Blacklist old refresh tokens
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

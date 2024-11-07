@@ -1,3 +1,5 @@
+# from django.utils.decorators import method_decorator
+# from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
@@ -24,6 +26,7 @@ class TestView(APIView):
         return Response(res)
 
 
+# @method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
     permission_classes = [AllowAny]  # Allow any user to access
 
