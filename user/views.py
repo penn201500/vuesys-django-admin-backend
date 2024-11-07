@@ -5,7 +5,7 @@ from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
+from rest_framework import status, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
 from user.models import SysUser
@@ -17,39 +17,26 @@ from .serializers import CustomTokenObtainPairSerializer
 # Create your views here.
 # Replace the LoginView with the following code
 class CustomTokenObtainPairView(TokenObtainPairView):
+    """
+    Custom view to handle JWT authentication and return custom response structure.
+    """
     serializer_class = CustomTokenObtainPairSerializer
 
-# @method_decorator(csrf_exempt, name='dispatch')
-class LoginView(APIView):
-    permission_classes = [AllowAny]  # Allow any user to access
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
 
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        username = serializer.validated_data.get('username')
-        password = serializer.validated_data.get('password')
-
-        user = authenticate(request, username=username, password=password)
-
-        if user:
-            refresh = RefreshToken.for_user(user)
-
-            res = {
-                'code': 200,
-                'data': {
-                    'access': str(refresh.access_token),
-                    'refresh': str(refresh),
+        try:
+            serializer.is_valid(raise_exception=True)
+            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        except serializers.ValidationError:
+            # Customize the error response
+            return Response(
+                {
+                    'code': 401,
+                    'message': 'Invalid username or password'
                 },
-                'message': 'Login successful'
-            }
-            return Response(res, status=status.HTTP_200_OK)
-        else:
-            res = {
-                'code': 401,
-                'message': 'Invalid username or password'
-            }
-            return Response(res, status=status.HTTP_401_UNAUTHORIZED)
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
 
 class LogoutView(APIView):
