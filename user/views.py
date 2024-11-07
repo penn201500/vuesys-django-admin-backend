@@ -59,6 +59,35 @@ class LoginView(APIView):
             return Response(res, status=status.HTTP_401_UNAUTHORIZED)
 
 
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh')
+            if not refresh_token:
+                res = {
+                    'code': 400,
+                    'message': 'Refresh token is required'
+                }
+                return Response(res, status=status.HTTP_400_BAD_REQUEST)
+
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+            res = {
+                'code': 200,
+                'message': 'Logout successful'
+            }
+            return Response(res, status=status.HTTP_200_OK)
+        except TokenError:
+            res = {
+                'code': 400,
+                'message': 'Invalid token'
+            }
+            return Response(res, status=status.HTTP_400_BAD_REQUEST)
+
+
 class UserInfoView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
