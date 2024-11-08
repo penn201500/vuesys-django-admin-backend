@@ -1,9 +1,12 @@
-# serializers.py
-
+# user/serializers.py
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Custom serializer to include additional user information in the response.
+    """
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -23,7 +26,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'message': 'Login successful',
         })
 
-        # Optionally, include additional user information
+        # Include additional user information
         data['user'] = {
             'id': self.user.id,
             'username': self.user.username,
