@@ -178,19 +178,3 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_SAMESITE': 'Lax',  # SameSite attribute
     'REFRESH_COOKIE_SAMESITE': 'Lax',
 }
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'user.authentication': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-    },
-}

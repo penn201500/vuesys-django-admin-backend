@@ -30,7 +30,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        remember_me = request.data.get('remember_me', False)
+        remember_me = request.data.get('rememberMe', False)
 
         try:
             serializer.is_valid(raise_exception=True)
@@ -76,7 +76,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 httponly=settings.SIMPLE_JWT['REFRESH_COOKIE_HTTP_ONLY'],
                 secure=settings.SIMPLE_JWT['REFRESH_COOKIE_SECURE'],
                 samesite=settings.SIMPLE_JWT['REFRESH_COOKIE_SAMESITE'],
-                max_age=access_token_lifetime.total_seconds(),  # Use the adjusted lifetime
+                max_age=refresh_token_lifetime.total_seconds(),  # Use the adjusted lifetime
                 path=settings.SIMPLE_JWT['REFRESH_COOKIE_PATH'],
             )
 
