@@ -9,7 +9,7 @@ from rest_framework import status, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate
 from user.models import SysUser
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .authentication import CookieJWTAuthentication
@@ -30,11 +30,23 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
+        remember_me = request.data.get('remember_me', False)
 
         try:
             serializer.is_valid(raise_exception=True)
             user = serializer.user
-            tokens = self.get_tokens_for_user(user)
+
+            # Adjust token lifetimes based on rememberMe value
+            if remember_me:
+                # Set longer lifetimes for 'remember me'
+                access_token_lifetime = timedelta(minutes=30)  # Adjust as needed
+                refresh_token_lifetime = timedelta(days=1)  # Adjust as needed
+            else:
+                # Use default lifetimes
+                access_token_lifetime = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME']
+                refresh_token_lifetime = settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME']
+
+            tokens = self.get_tokens_for_user(user, access_token_lifetime, refresh_token_lifetime)
 
             response = Response({
                 'code': 200,
@@ -53,7 +65,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
                 secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
                 samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
-                max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+                max_age=access_token_lifetime.total_seconds(),  # Use the adjusted lifetime
                 path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
             )
 
@@ -64,7 +76,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 httponly=settings.SIMPLE_JWT['REFRESH_COOKIE_HTTP_ONLY'],
                 secure=settings.SIMPLE_JWT['REFRESH_COOKIE_SECURE'],
                 samesite=settings.SIMPLE_JWT['REFRESH_COOKIE_SAMESITE'],
-                max_age=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds(),
+                max_age=access_token_lifetime.total_seconds(),  # Use the adjusted lifetime
                 path=settings.SIMPLE_JWT['REFRESH_COOKIE_PATH'],
             )
 
@@ -80,15 +92,17 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-    def get_tokens_for_user(self, user):
+    def get_tokens_for_user(self, user, access_lifetime, refresh_lifetime):
         """
         Generates token pair for the authenticated user.
         """
-        from rest_framework_simplejwt.tokens import RefreshToken
         refresh = RefreshToken.for_user(user)
+        refresh.set_exp(lifetime=refresh_lifetime)
+        access = refresh.access_token
+        access.set_exp(lifetime=access_lifetime)
         return {
             'refresh': str(refresh),
-            'access': str(refresh.access_token),
+            'access': str(access),
         }
 
 
