@@ -124,6 +124,8 @@ AUTH_USER_MODEL = 'user.SysUser'
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
 CORS_ALLOW_METHODS = [
     'GET',
     'POST',
@@ -153,7 +155,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Use JWTAuthentication
+        # 'rest_framework_simplejwt.authentication.JWTAuthentication',  # Use JWTAuthentication
+        'user.authentication.CookieJWTAuthentication',
     ),
 }
 
@@ -161,17 +164,33 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Access token lifetime
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Refresh token lifetime
-    'ROTATE_REFRESH_TOKENS': True,  # Rotate refresh tokens on refresh
-    'BLACKLIST_AFTER_ROTATION': True,  # Blacklist old refresh tokens
+    'ROTATE_REFRESH_TOKENS': False,  # Rotate refresh tokens on refresh
+    'BLACKLIST_AFTER_ROTATION': False,  # Blacklist old refresh tokens
     'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_COOKIE': 'accessToken',                   # Custom access token cookie name
-    'REFRESH_COOKIE': 'refreshToken',               # Custom refresh token cookie name
-    'AUTH_COOKIE_PATH': '/',                        # Cookie path
-    'REFRESH_COOKIE_PATH': '/user/api/token/refresh/',                     # Cookie path
-    'AUTH_COOKIE_HTTP_ONLY': True,                  # HttpOnly flag for access token
-    'REFRESH_COOKIE_HTTP_ONLY': True,               # HttpOnly flag for refresh token
-    'AUTH_COOKIE_SECURE': not DEBUG,                     # Secure flag (set to True in production)
-    'REFRESH_COOKIE_SECURE': not DEBUG,                  # Secure flag (set to True in production)
-    'AUTH_COOKIE_SAMESITE': 'Lax',                  # SameSite attribute
+    'AUTH_COOKIE': 'accessToken',  # Custom access token cookie name
+    'REFRESH_COOKIE': 'refreshToken',  # Custom refresh token cookie name
+    'AUTH_COOKIE_PATH': '/',  # Cookie path
+    'REFRESH_COOKIE_PATH': '/',  # Cookie path
+    'AUTH_COOKIE_HTTP_ONLY': True,  # HttpOnly flag for access token
+    'REFRESH_COOKIE_HTTP_ONLY': True,  # HttpOnly flag for refresh token
+    'AUTH_COOKIE_SECURE': not DEBUG,  # Secure flag (set to True in production)
+    'REFRESH_COOKIE_SECURE': not DEBUG,  # Secure flag (set to True in production)
+    'AUTH_COOKIE_SAMESITE': 'Lax',  # SameSite attribute
     'REFRESH_COOKIE_SAMESITE': 'Lax',
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'user.authentication': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
 }

@@ -11,6 +11,8 @@ from django.contrib.auth import authenticate
 from user.models import SysUser
 from datetime import datetime, timezone
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+from .authentication import CookieJWTAuthentication
 from .serializers import CustomTokenObtainPairSerializer
 from django.conf import settings
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -92,10 +94,11 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
 
     def post(self, request):
         refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['REFRESH_COOKIE'])
+        print('refresh_token is: ', refresh_token)
         if not refresh_token:
             res = {
                 'code': 400,
@@ -106,6 +109,7 @@ class LogoutView(APIView):
         try:
             token = RefreshToken(refresh_token)
             token.blacklist()
+            print('token blacklisted', token)
 
             res = {'code': 200, 'message': 'Logout successful'},
             response = Response(
@@ -129,7 +133,7 @@ class LogoutView(APIView):
 
 class UserInfoView(APIView):
     permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
 
     def get(self, request):
         user = request.user
@@ -143,7 +147,7 @@ class UserInfoView(APIView):
 
 class TokenValidityView(APIView):
     permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CookieJWTAuthentication]
 
     def get(self, request):
         auth_header = request.META.get('HTTP_AUTHORIZATION', None)
