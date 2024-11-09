@@ -8,13 +8,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from user.utils import set_token_cookie
 from .authentication import CookieJWTAuthentication
 from .serializers import CustomTokenObtainPairSerializer
-
-from user.utils import set_token_cookie
+from rest_framework_simplejwt.views import TokenRefreshView as SimpleJWTTokenRefreshView
 
 
 # Create your views here.
@@ -100,28 +100,28 @@ class LogoutView(APIView):
             }
             return Response(res, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            token = RefreshToken(refresh_token)
-            token.blacklist()
+        if refresh_token:
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
 
-            res = {'code': 200, 'message': 'Logout successful'}
-            response = Response(
-                res,
-                status=status.HTTP_200_OK
-            )
+                res = {'code': 200, 'message': 'Logout successful'}
+                response = Response(
+                    res,
+                    status=status.HTTP_200_OK
+                )
+            except TokenError as e:
+                res = {
+                    'code': 400,
+                    'message': f'Invalid token, error is {e}'
+                }
+                response = Response(res, status=status.HTTP_400_BAD_REQUEST)
 
             # Remove the tokens by deleting the cookies
             response.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE'], path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'])
             response.delete_cookie(settings.SIMPLE_JWT['REFRESH_COOKIE'], path=settings.SIMPLE_JWT['REFRESH_COOKIE_PATH'])
 
             return response
-
-        except TokenError as e:
-            res = {
-                'code': 400,
-                'message': f'Invalid token, error is {e}'
-            }
-            return Response(res, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserInfoView(APIView):
@@ -163,10 +163,10 @@ class TokenValidityView(APIView):
             return Response({'code': 400, 'valid': False, 'message': 'Authorization header missing'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class TokenRefreshView(APIView):
+class CustomTokenRefreshView(SimpleJWTTokenRefreshView):
     permission_classes = [AllowAny]
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['REFRESH_COOKIE'])
         if not refresh_token:
             res = {
@@ -174,24 +174,32 @@ class TokenRefreshView(APIView):
                 'message': 'No refresh token provided'
             }
             return Response(res, status=status.HTTP_400_BAD_REQUEST)
+
+        data = {'refresh': refresh_token}
+        serializer = self.get_serializer(data=data)
         try:
-            refresh = RefreshToken(refresh_token)
-            access = refresh.access_token # Generate new access token
-
-            # Create new access token with updated expiry
-            response = Response({
-                'code': 200,
-                'message': 'Token refreshed successfully'
-            })
-
-            # Set new access token cookie
-            return set_token_cookie(response, 'access', str(access))
-
+            serializer.is_valid(raise_exception=True)
         except TokenError as e:
             return Response({
                 'code': 401,
-                'message': f'Invalid or expired refresh token, {e}'
+                'message': f'Invalid or expired refresh token: {str(e)}'
             }, status=status.HTTP_401_UNAUTHORIZED)
+
+        access = serializer.validated_data.get('access')
+        new_refresh = serializer.validated_data.get('refresh')
+        res = {
+            'code': 200,
+            'message': 'Token refreshed successfully'
+        }
+        response = Response(res, status=status.HTTP_200_OK)
+        # Set new access token cookie
+        if access:
+            set_token_cookie(response, 'access', access)
+        # Set new refresh token cookie if rotation is enabled and a new refresh token is issued
+        if new_refresh:
+            set_token_cookie(response, 'refresh', new_refresh)
+
+        return response
 
 
 class GetCSRFTokenView(APIView):

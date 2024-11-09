@@ -166,6 +166,7 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Refresh token lifetime
     'ROTATE_REFRESH_TOKENS': not DEBUG,  # Rotate refresh tokens on refresh
     'BLACKLIST_AFTER_ROTATION': not DEBUG,  # Blacklist old refresh tokens
+    'BLACKLIST_ENABLED': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_COOKIE': 'accessToken',  # Custom access token cookie name
     'REFRESH_COOKIE': 'refreshToken',  # Custom refresh token cookie name
