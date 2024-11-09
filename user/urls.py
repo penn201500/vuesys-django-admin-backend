@@ -1,6 +1,5 @@
 from django.urls import path
-from user.views import TokenValidityView, UserInfoView, LogoutView, CustomTokenObtainPairView, GetCSRFTokenView
-from rest_framework_simplejwt.views import TokenRefreshView
+from user.views import TokenValidityView, UserInfoView, LogoutView, CustomTokenObtainPairView, GetCSRFTokenView, TokenRefreshView
 
 urlpatterns = [
     path('api/login/', CustomTokenObtainPairView.as_view(), name='login'),

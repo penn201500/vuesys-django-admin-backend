@@ -182,7 +182,6 @@ class TokenValidityView(APIView):
 
 class TokenRefreshView(APIView):
     permission_classes = [AllowAny]
-    authentication_classes = [CookieJWTAuthentication]
 
     def post(self, request):
         refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['REFRESH_COOKIE'])
@@ -215,10 +214,10 @@ class TokenRefreshView(APIView):
 
             return response
 
-        except TokenError:
+        except TokenError as e:
             return Response({
                 'code': 401,
-                'message': 'Invalid or expired refresh token'
+                'message': f'Invalid or expired refresh token, {e}'
             }, status=status.HTTP_401_UNAUTHORIZED)
 
 
