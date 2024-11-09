@@ -1,22 +1,18 @@
-# from django.utils.decorators import method_decorator
-# from django.views.decorators.csrf import csrf_exempt
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from datetime import datetime, timezone, timedelta
+
+from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from django.contrib.auth import authenticate
-from user.models import SysUser
-from datetime import datetime, timezone, timedelta
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .authentication import CookieJWTAuthentication
 from .serializers import CustomTokenObtainPairSerializer
-from django.conf import settings
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.utils.decorators import method_decorator
 
 
 # Create your views here.
