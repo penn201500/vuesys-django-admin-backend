@@ -14,6 +14,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .authentication import CookieJWTAuthentication
 from .serializers import CustomTokenObtainPairSerializer
 
+from user.utils import set_token_cookie
+
 
 # Create your views here.
 # Replace the LoginView with the following code
@@ -55,26 +57,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             }, status=status.HTTP_200_OK)
 
             # Set access token cookie
-            response.set_cookie(
-                key=settings.SIMPLE_JWT['AUTH_COOKIE'],
-                value=tokens['access'],
-                httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-                secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-                samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
-                max_age=access_token_lifetime.total_seconds(),  # Use the adjusted lifetime
-                path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
-            )
-
+            set_token_cookie(response, 'access', tokens['access'])
             # Set refresh token cookie
-            response.set_cookie(
-                key=settings.SIMPLE_JWT['REFRESH_COOKIE'],
-                value=tokens['refresh'],
-                httponly=settings.SIMPLE_JWT['REFRESH_COOKIE_HTTP_ONLY'],
-                secure=settings.SIMPLE_JWT['REFRESH_COOKIE_SECURE'],
-                samesite=settings.SIMPLE_JWT['REFRESH_COOKIE_SAMESITE'],
-                max_age=refresh_token_lifetime.total_seconds(),  # Use the adjusted lifetime
-                path=settings.SIMPLE_JWT['REFRESH_COOKIE_PATH'],
-            )
+            set_token_cookie(response, 'refresh', tokens['refresh'])
 
             return response
 
@@ -202,17 +187,7 @@ class TokenRefreshView(APIView):
             })
 
             # Set new access token cookie
-            response.set_cookie(
-                key=settings.SIMPLE_JWT['AUTH_COOKIE'],
-                value=str(access),
-                httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-                secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-                samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
-                max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
-                path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
-            )
-
-            return response
+            return set_token_cookie(response, 'access', str(access))
 
         except TokenError as e:
             return Response({
