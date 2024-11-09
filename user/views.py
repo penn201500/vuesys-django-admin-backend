@@ -106,7 +106,7 @@ class LogoutView(APIView):
             token.blacklist()
             print('token blacklisted', token)
 
-            res = {'code': 200, 'message': 'Logout successful'},
+            res = {'code': 200, 'message': 'Logout successful'}
             response = Response(
                 res,
                 status=status.HTTP_200_OK
