@@ -93,7 +93,6 @@ class LogoutView(APIView):
 
     def post(self, request):
         refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['REFRESH_COOKIE'])
-        print('refresh_token is: ', refresh_token)
         if not refresh_token:
             res = {
                 'code': 400,
@@ -104,7 +103,6 @@ class LogoutView(APIView):
         try:
             token = RefreshToken(refresh_token)
             token.blacklist()
-            print('token blacklisted', token)
 
             res = {'code': 200, 'message': 'Logout successful'}
             response = Response(
@@ -118,10 +116,10 @@ class LogoutView(APIView):
 
             return response
 
-        except TokenError:
+        except TokenError as e:
             res = {
                 'code': 400,
-                'message': 'Invalid token'
+                'message': f'Invalid token, error is {e}'
             }
             return Response(res, status=status.HTTP_400_BAD_REQUEST)
 
