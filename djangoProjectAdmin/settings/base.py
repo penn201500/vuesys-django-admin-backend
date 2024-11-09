@@ -164,8 +164,8 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Access token lifetime
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Refresh token lifetime
-    'ROTATE_REFRESH_TOKENS': False,  # Rotate refresh tokens on refresh
-    'BLACKLIST_AFTER_ROTATION': False,  # Blacklist old refresh tokens
+    'ROTATE_REFRESH_TOKENS': not DEBUG,  # Rotate refresh tokens on refresh
+    'BLACKLIST_AFTER_ROTATION': not DEBUG,  # Blacklist old refresh tokens
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_COOKIE': 'accessToken',  # Custom access token cookie name
     'REFRESH_COOKIE': 'refreshToken',  # Custom refresh token cookie name
@@ -173,8 +173,8 @@ SIMPLE_JWT = {
     'REFRESH_COOKIE_PATH': '/',  # Cookie path
     'AUTH_COOKIE_HTTP_ONLY': True,  # HttpOnly flag for access token
     'REFRESH_COOKIE_HTTP_ONLY': True,  # HttpOnly flag for refresh token
-    'AUTH_COOKIE_SECURE': not DEBUG,  # Secure flag (set to True in production)
-    'REFRESH_COOKIE_SECURE': not DEBUG,  # Secure flag (set to True in production)
+    'AUTH_COOKIE_SECURE': not DEBUG,  # Ensures cookies are only sent over HTTPS (set to True in production)
+    'REFRESH_COOKIE_SECURE': not DEBUG,  # Ensures cookies are only sent over HTTPS (set to True in production)
     'AUTH_COOKIE_SAMESITE': 'Lax',  # SameSite attribute
     'REFRESH_COOKIE_SAMESITE': 'Lax',
 }
