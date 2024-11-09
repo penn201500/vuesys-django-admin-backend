@@ -4,7 +4,12 @@ from django.conf import settings
 
 def set_token_cookie(response, token_type, token_value):
     """
-    Helper function to set token cookies with consistent settings
+    Sets the specified token in the response cookies.
+
+    Args:
+        response (Response): The DRF Response object.
+        token_type (str): 'access' or 'refresh'.
+        token (str): The token string.
     """
     is_access = token_type == 'access'
     settings_prefix = 'AUTH' if is_access else 'REFRESH'
