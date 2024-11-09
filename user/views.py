@@ -160,20 +160,66 @@ class TokenValidityView(APIView):
     authentication_classes = [CookieJWTAuthentication]
 
     def get(self, request):
-        auth_header = request.META.get('HTTP_AUTHORIZATION', None)
-        if auth_header:
+        access_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE'])
+        if access_token:
             try:
-                token_str = auth_header.split(' ')[1]
-                token = AccessToken(token_str)
-                exp_ts = token['exp']
+                exp_ts = access_token['exp']
+                issued_at_ts = access_token['iat']
+
                 exp_datetime = datetime.fromtimestamp(exp_ts, timezone.utc)
+                iat_datetime = datetime.fromtimestamp(issued_at_ts, timezone.utc)
                 now = datetime.now(timezone.utc)
-                time_left = exp_datetime - now
-                return Response({'code': 200, 'valid': True, 'data': {'time_left': time_left.total_seconds()}})
+
+                time_left = (exp_datetime - now).total_seconds()
+                token_lifetime = (exp_datetime - iat_datetime).total_seconds()
+
+                return Response({'code': 200, 'valid': True, 'data': {'time_left': time_left, 'token_lifetime': token_lifetime}})
             except (IndexError, TokenError, InvalidToken):
                 return Response({'code': 400, 'valid': False, 'message': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'code': 400, 'valid': False, 'message': 'Authorization header missing'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TokenRefreshView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def post(self, request):
+        refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['REFRESH_COOKIE'])
+        if not refresh_token:
+            res = {
+                'code': 400,
+                'message': 'No refresh token provided'
+            }
+            return Response(res, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            refresh = RefreshToken(refresh_token)
+            access = refresh.access_token # Generate new access token
+
+            # Create new access token with updated expiry
+            response = Response({
+                'code': 200,
+                'message': 'Token refreshed successfully'
+            })
+
+            # Set new access token cookie
+            response.set_cookie(
+                key=settings.SIMPLE_JWT['AUTH_COOKIE'],
+                value=str(access),
+                httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+                secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+                samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+                max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+                path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
+            )
+
+            return response
+
+        except TokenError:
+            return Response({
+                'code': 401,
+                'message': 'Invalid or expired refresh token'
+            }, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class GetCSRFTokenView(APIView):
