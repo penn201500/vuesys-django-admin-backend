@@ -1,3 +1,5 @@
+# views.py
+
 from datetime import datetime, timezone, timedelta
 
 from django.conf import settings
@@ -9,16 +11,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView as SimpleJWTTokenRefreshView
 
 from user.utils import set_token_cookie
 from .authentication import CookieJWTAuthentication
 from .serializers import CustomTokenObtainPairSerializer
-from rest_framework_simplejwt.views import TokenRefreshView as SimpleJWTTokenRefreshView
+from django_ratelimit.decorators import ratelimit
 
-
-# Create your views here.
-# Replace the LoginView with the following code
 class CustomTokenObtainPairView(TokenObtainPairView):
     """
     Custom view to handle JWT authentication and return custom response structure.
@@ -26,6 +25,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
     permission_classes = [AllowAny]
 
+    @ratelimit(key='ip', rate=settings.RATE_LIMIT_LOGIN)
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         remember_me = request.data.get('rememberMe', False)
@@ -90,6 +90,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @ratelimit(key='ip', rate=settings.RATE_LIMIT_LOGIN)  # Assuming same rate limit as login
     def post(self, request):
         refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['REFRESH_COOKIE'])
         if not refresh_token:
@@ -141,6 +142,7 @@ class TokenValidityView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
+    @ratelimit(key='ip', rate=settings.RATE_LIMIT_LOGIN)
     def get(self, request):
         access_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE'])
         if access_token:
@@ -159,12 +161,17 @@ class TokenValidityView(APIView):
             except (IndexError, TokenError, InvalidToken):
                 return Response({'code': 400, 'valid': False, 'message': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'code': 400, 'valid': False, 'message': 'Authorization header missing'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'code': 400,
+                'valid': False,
+                'message': 'Authorization header missing'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomTokenRefreshView(SimpleJWTTokenRefreshView):
     permission_classes = [AllowAny]
 
+    @ratelimit(key='ip', rate=settings.RATE_LIMIT_REFRESH)
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['REFRESH_COOKIE'])
         if not refresh_token:
@@ -205,5 +212,6 @@ class GetCSRFTokenView(APIView):
     permission_classes = [AllowAny]
 
     @method_decorator(ensure_csrf_cookie)
+    @ratelimit(key='ip', rate=settings.RATE_LIMIT_CSRF)
     def get(self, request):
         return Response({'detail': 'CSRF cookie set'}, status=status.HTTP_200_OK)

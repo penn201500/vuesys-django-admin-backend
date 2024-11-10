@@ -179,3 +179,16 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_SAMESITE': 'Lax',  # SameSite attribute
     'REFRESH_COOKIE_SAMESITE': 'Lax',
 }
+
+
+# Retrieve rate limit settings from environment variables
+RATE_LIMIT_LOGIN = os.getenv('RATE_LIMIT_LOGIN', '10/m')
+RATE_LIMIT_REFRESH = os.getenv('RATE_LIMIT_REFRESH', '10/m')
+RATE_LIMIT_CSRF = os.getenv('RATE_LIMIT_CSRF', '10/m')
+
+# Optionally, group rate limit for better organization
+RATE_LIMITS = {
+    'LOGIN': RATE_LIMIT_LOGIN,
+    'REFRESH': RATE_LIMIT_REFRESH,
+    'CSRF': RATE_LIMIT_CSRF,
+}
