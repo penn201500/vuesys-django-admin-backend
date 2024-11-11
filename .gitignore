@@ -13,3 +13,4 @@ media
 # <django-project-name>/staticfiles/
 
 .env
+.env.*
