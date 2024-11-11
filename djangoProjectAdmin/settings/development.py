@@ -6,7 +6,14 @@ from .base import *
 DEBUG = True
 
 # Allow all hosts during development
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
+# HTTPS settings
+# All set to False for development
+# All set to True for development
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # Development-specific database settings (optional)
 # For example, using SQLite for development
