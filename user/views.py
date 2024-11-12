@@ -103,7 +103,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     @method_decorator(rate_limit_user(rate=settings.RATE_LIMIT_LOGIN, method="POST"))
     def post(self, request):
