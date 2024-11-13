@@ -51,10 +51,12 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 # Set longer lifetimes for 'remember me'
                 access_token_lifetime = timedelta(minutes=30)  # Adjust as needed
                 refresh_token_lifetime = timedelta(days=1)  # Adjust as needed
+                refresh_cookie_max_age = 1 * 24 * 60 * 60  # 1 day in seconds
             else:
                 # Use default lifetimes
                 access_token_lifetime = settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"]
                 refresh_token_lifetime = settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"]
+                refresh_cookie_max_age = None  # Session cookie
 
             tokens = self.get_tokens_for_user(
                 user, access_token_lifetime, refresh_token_lifetime
@@ -77,7 +79,9 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             # Set access token cookie
             set_token_cookie(response, "access", tokens["access"])
             # Set refresh token cookie
-            set_token_cookie(response, "refresh", tokens["refresh"])
+            set_token_cookie(
+                response, "refresh", tokens["refresh"], max_age=refresh_cookie_max_age
+            )
 
             return response
 

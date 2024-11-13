@@ -37,7 +37,7 @@ def rate_limit_ip(rate, method="POST"):
     return decorator
 
 
-def set_token_cookie(response, token_type, token_value):
+def set_token_cookie(response, token_type, token_value, max_age=None):
     """
     Sets the specified token in the response cookies.
 
@@ -45,19 +45,22 @@ def set_token_cookie(response, token_type, token_value):
         response (Response): The DRF Response object.
         token_type (str): 'access' or 'refresh'.
         token (str): The token string.
+        max_age (int, optional): Max age in seconds for the cookie. Defaults to None.
     """
     is_access = token_type == "access"
     settings_prefix = "AUTH" if is_access else "REFRESH"
 
-    response.set_cookie(
-        key=settings.SIMPLE_JWT[f"{settings_prefix}_COOKIE"],
-        value=token_value,
-        httponly=settings.SIMPLE_JWT[f"{settings_prefix}_COOKIE_HTTP_ONLY"],
-        secure=settings.SIMPLE_JWT[f"{settings_prefix}_COOKIE_SECURE"],
-        samesite=settings.SIMPLE_JWT[f"{settings_prefix}_COOKIE_SAMESITE"],
-        max_age=settings.SIMPLE_JWT[
-            f'{"ACCESS" if is_access else "REFRESH"}_TOKEN_LIFETIME'
-        ].total_seconds(),
-        path=settings.SIMPLE_JWT[f"{settings_prefix}_COOKIE_PATH"],
-    )
+    cookie_kwargs = {
+        "key": settings.SIMPLE_JWT[f"{settings_prefix}_COOKIE"],
+        "value": token_value,
+        "httponly": settings.SIMPLE_JWT[f"{settings_prefix}_COOKIE_HTTP_ONLY"],
+        "secure": settings.SIMPLE_JWT[f"{settings_prefix}_COOKIE_SECURE"],
+        "samesite": settings.SIMPLE_JWT[f"{settings_prefix}_COOKIE_SAMESITE"],
+        "path": settings.SIMPLE_JWT[f"{settings_prefix}_COOKIE_PATH"],
+    }
+
+    if max_age is not None:
+        cookie_kwargs["max_age"] = max_age
+
+    response.set_cookie(**cookie_kwargs)
     return response
