@@ -41,4 +41,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         data["remember_me"] = attrs.get("remember_me", False)
 
+        refresh = self.get_token(self.user)
+        # Add refresh_me in the refresh token
+        refresh["remember_me"] = data["remember_me"]
+        data["refresh"] = str(refresh)
+
         return data

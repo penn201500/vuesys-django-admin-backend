@@ -236,8 +236,17 @@ class CustomTokenRefreshView(SimpleJWTTokenRefreshView):
 
         refresh_token = request.COOKIES.get(settings.SIMPLE_JWT["REFRESH_COOKIE"])
         if not refresh_token:
-            res = {"code": 400, "message": "No refresh token provided"}
-            return Response(res, status=status.HTTP_400_BAD_REQUEST)
+            res = {"code": 401, "message": "No refresh token provided"}
+            return Response(res, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            refresh = RefreshToken(refresh_token)
+            remember_me = refresh.get("remember_me", False)
+        except:
+            return Response(
+                {"code": 401, "message": f"Invalid refresh token: {str(e)}"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         data = {"refresh": refresh_token}
         serializer = self.get_serializer(data=data)
@@ -258,8 +267,14 @@ class CustomTokenRefreshView(SimpleJWTTokenRefreshView):
             set_token_cookie(response, "access", access)
         # Set new refresh token cookie if rotation is enabled and a new refresh token is issued
         if new_refresh:
-            set_token_cookie(response, "refresh", new_refresh)
+            if remember_me:
+                refresh_cookie_max_age = 1 * 24 * 60 * 60  # 1 day in seconds
+            else:
+                refresh_cookie_max_age = None  # Session cookie
 
+            set_token_cookie(
+                response, "refresh", new_refresh, max_age=refresh_cookie_max_age
+            )
         return response
 
 
