@@ -246,7 +246,7 @@ class CustomTokenRefreshView(SimpleJWTTokenRefreshView):
         try:
             refresh = RefreshToken(refresh_token)
             remember_me = refresh.get("remember_me", False)
-        except:
+        except TokenError as e:
             return Response(
                 {"code": 401, "message": f"Invalid refresh token: {str(e)}"},
                 status=status.HTTP_401_UNAUTHORIZED,

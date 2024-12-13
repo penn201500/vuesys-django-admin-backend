@@ -1,3 +1,6 @@
 from django.urls import path
+from .views import UserMenuView
 
-urlpatterns = []
+urlpatterns = [
+    path("user-menu/", UserMenuView.as_view(), name="user-menu"),
+]
