@@ -1,9 +1,11 @@
 # views.py
 
 from datetime import datetime, timezone, timedelta
+from django.utils import timezone
 
 import jwt
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import status, serializers
@@ -294,3 +296,68 @@ class GetCSRFTokenView(APIView):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
         return Response({"detail": "CSRF cookie set"}, status=status.HTTP_200_OK)
+
+
+class SignupView(APIView):
+    permission_classes = [AllowAny]
+
+    @method_decorator(rate_limit_user(rate=settings.RATE_LIMIT_LOGIN, method="POST"))
+    def post(self, request):
+        if getattr(request, "limited", False):
+            return Response(
+                {"code": 429, "message": "Too many requests, please try again later."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        User = get_user_model()
+        data = request.data
+
+        # Validate required fields
+        required_fields = ["username", "password", "email"]
+        for field in required_fields:
+            if not data.get(field):
+                return Response(
+                    {"code": 400, "message": f"{field} is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Check if username already exists
+        if User.objects.filter(username=data["username"]).exists():
+            return Response(
+                {"code": 400, "message": "Username already exists"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if email already exists
+        if User.objects.filter(email=data["email"]).exists():
+            return Response(
+                {"code": 400, "message": "Email already exists"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.create_user(
+                username=data["username"],
+                email=data["email"],
+                password=data["password"],
+                create_time=timezone.now(),
+                status=1,  # Active status
+            )
+
+            return Response(
+                {
+                    "code": 200,
+                    "message": "User created successfully",
+                    "data": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                    },
+                }
+            )
+
+        except Exception as e:
+            return Response(
+                {"code": 500, "message": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
