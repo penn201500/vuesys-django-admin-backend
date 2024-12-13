@@ -49,7 +49,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             user = serializer.user
 
             # Update the last_login field manually
-            user.last_login = datetime.now(timezone.utc)
+            user.last_login = timezone.now()
             user.save(update_fields=["last_login"])
 
             # Adjust token lifetimes based on rememberMe value
