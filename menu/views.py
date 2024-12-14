@@ -15,27 +15,16 @@ class UserMenuView(APIView):
         user_roles = SysUserRole.objects.filter(user_id=request.user.id).values_list(
             "role_id", flat=True
         )
-
-        print("DEBUG_PRINT: variable = user_roles", user_roles)
-
         # Get all menu IDs associated with these roles
         menu_ids = (
             SysRoleMenu.objects.filter(role_id__in=user_roles)
             .values_list("menu_id", flat=True)
             .distinct()
         )
-        print("DEBUG_PRINT: variable = menu_ids", menu_ids)
-
         # Fetch the menus and order them by `order_num`
         menus = SysMenu.objects.filter(id__in=menu_ids).order_by("order_num")
-
-        # print("DEBUG_PRINT: variable = $VAR$",)
-        print(menus)
-
         # Build a hierarchical menu structure
         menu_data = self.build_menu_hierarchy(menus)
-        print(menu_data)
-
         return Response({"code": 200, "data": menu_data}, status=200)
 
     def build_menu_hierarchy(self, menus):
