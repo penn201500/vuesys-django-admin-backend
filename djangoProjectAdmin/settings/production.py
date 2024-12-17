@@ -24,10 +24,6 @@ SECURE_BROWSER_XSS_FILTER = True
 # Static files settings
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Media files settings (if applicable)
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
-
 # Logging configuration
 LOGGING = {
     "version": 1,
