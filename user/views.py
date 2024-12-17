@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone, timedelta
 from django.utils import timezone
-
+import os
 import jwt
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -23,7 +23,11 @@ from rest_framework_simplejwt.views import (
 from user.utils import rate_limit_user
 from user.utils import set_token_cookie
 from .authentication import CookieJWTAuthentication
-from .serializers import CustomTokenObtainPairSerializer
+from .serializers import (
+    CustomTokenObtainPairSerializer,
+    ProfileUpdateSerializer,
+    PasswordUpdateSerializer,
+)
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -361,3 +365,110 @@ class SignupView(APIView):
                 {"code": 500, "message": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class ProfileUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def patch(self, request):
+        serializer = ProfileUpdateSerializer(
+            request.user, data=request.data, partial=True
+        )
+
+        if serializer.is_valid():
+            serializer.save(update_time=timezone.now())
+            return Response(
+                {
+                    "code": 200,
+                    "message": "Profile updated successfully",
+                    "data": serializer.data,
+                }
+            )
+
+        return Response(
+            {"code": 400, "message": "Invalid data", "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class PasswordUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def post(self, request):
+        serializer = PasswordUpdateSerializer(
+            data=request.data, context={"user": request.user}
+        )
+
+        if serializer.is_valid():
+            user = request.user
+            user.set_password(serializer.validated_data["new_password"])
+            user.save()
+
+            return Response({"code": 200, "message": "Password updated successfully"})
+
+        return Response(
+            {"code": 400, "message": "Invalid data", "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class AvatarUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def post(self, request):
+        if "avatar" not in request.FILES:
+            return Response(
+                {"code": 400, "message": "No avatar file provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        avatar_file = request.FILES["avatar"]
+
+        # Validate file type
+        allowed_types = ["image/jpeg", "image/png", "image/gif"]
+        if avatar_file.content_type not in allowed_types:
+            return Response(
+                {
+                    "code": 400,
+                    "message": "Invalid file type. Only JPEG, PNG and GIF are allowed.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate file size (e.g., max 5MB)
+        if avatar_file.size > 5 * 1024 * 1024:
+            return Response(
+                {"code": 400, "message": "File too large. Maximum size is 5MB."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Generate unique filename
+        file_extension = os.path.splitext(avatar_file.name)[1]
+        new_filename = f"avatar_{request.user.id}_{int(timezone.now().timestamp())}{file_extension}"
+
+        # Save file path in media directory
+        avatar_path = os.path.join("avatars", new_filename)
+        full_path = os.path.join(settings.MEDIA_ROOT, "avatars", new_filename)
+
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+        # Save file
+        with open(full_path, "wb+") as destination:
+            for chunk in avatar_file.chunks():
+                destination.write(chunk)
+
+        # Update user avatar field
+        request.user.avatar = f"/media/{avatar_path}"
+        request.user.save()
+
+        return Response(
+            {
+                "code": 200,
+                "message": "Avatar updated successfully",
+                "data": {"avatar_url": request.user.avatar},
+            }
+        )

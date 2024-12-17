@@ -7,6 +7,9 @@ from user.views import (
     GetCSRFTokenView,
     CustomTokenRefreshView,
     SignupView,
+    ProfileUpdateView,
+    PasswordUpdateView,
+    AvatarUpdateView,
 )
 
 urlpatterns = [
@@ -17,4 +20,7 @@ urlpatterns = [
     path("api/token/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
     path("api/csrf/", GetCSRFTokenView.as_view(), name="csrf"),
     path("api/signup/", SignupView.as_view(), name="signup"),
+    path("api/profile/update/", ProfileUpdateView.as_view(), name="profile-update"),
+    path("api/profile/password/", PasswordUpdateView.as_view(), name="password-update"),
+    path("api/profile/avatar/", AvatarUpdateView.as_view(), name="avatar-update"),
 ]
