@@ -119,6 +119,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 class LogoutView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []  # Skip access token authentication
 
     @method_decorator(rate_limit_user(rate=settings.RATE_LIMIT_LOGIN, method="POST"))
     def post(self, request):
@@ -131,19 +132,14 @@ class LogoutView(APIView):
         if not refresh_token:
             res = {"code": 400, "message": "Refresh token is required"}
             return Response(res, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
 
-        if refresh_token:
-            try:
-                token = RefreshToken(refresh_token)
-                token.blacklist()
+            res = {"code": 200, "message": "Logout successful"}
+            response = Response(res, status=status.HTTP_200_OK)
 
-                res = {"code": 200, "message": "Logout successful"}
-                response = Response(res, status=status.HTTP_200_OK)
-            except TokenError as e:
-                res = {"code": 400, "message": f"Invalid token, error is {e}"}
-                response = Response(res, status=status.HTTP_400_BAD_REQUEST)
-
-            # Remove the tokens by deleting the cookies
+            # Remove cookies
             response.delete_cookie(
                 settings.SIMPLE_JWT["AUTH_COOKIE"],
                 path=settings.SIMPLE_JWT["AUTH_COOKIE_PATH"],
@@ -154,6 +150,9 @@ class LogoutView(APIView):
             )
 
             return response
+        except TokenError as e:
+            res = {"code": 400, "message": f"Invalid token, error is {e}"}
+            return Response(res, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserInfoView(APIView):
