@@ -27,6 +27,7 @@ from .serializers import (
     CustomTokenObtainPairSerializer,
     ProfileUpdateSerializer,
     PasswordUpdateSerializer,
+    UserProfileSerializer,
 )
 
 
@@ -166,13 +167,8 @@ class UserInfoView(APIView):
                 {"code": 429, "message": "Too many requests, please try again later."},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
-        user = request.user
-        data = {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-        }
-        return Response({"code": 200, "data": data})
+        serializer = UserProfileSerializer(request.user)
+        return Response({"code": 200, "data": serializer.data})
 
 
 class TokenValidityView(APIView):

@@ -166,7 +166,7 @@ REST_FRAMEWORK = {
 
 # SIMPLE_JWT configuration
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),  # Access token lifetime
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=50),  # Access token lifetime
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),  # Refresh token lifetime
     "ROTATE_REFRESH_TOKENS": not DEBUG,  # Rotate refresh tokens on refresh
     "BLACKLIST_AFTER_ROTATION": not DEBUG,  # Blacklist old refresh tokens

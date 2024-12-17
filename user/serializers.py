@@ -41,7 +41,18 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             "id": self.user.id,
             "username": self.user.username,
             "email": self.user.email,
-            # Add more user fields if necessary
+            "phone": self.user.phone,
+            "comment": self.user.comment,
+            "status": self.user.status,
+            "create_time": (
+                self.user.create_time.isoformat() if self.user.create_time else None
+            ),
+            "login_date": (
+                self.user.last_login.isoformat() if self.user.last_login else None
+            ),
+            "update_time": (
+                self.user.update_time.isoformat() if self.user.update_time else None
+            ),
         }
 
         data["remember_me"] = attrs.get("remember_me", False)
@@ -57,16 +68,27 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["email", "phone", "comment"]
+        fields = ["email", "phone", "comment", "status"]
         extra_kwargs = {
             "email": {"required": False},
             "phone": {"required": False},
             "comment": {"required": False},
+            "status": {"required": False},
         }
 
     def validate_phone(self, value):
         if value and not value.isdigit():
             raise serializers.ValidationError("Phone number must contain only digits")
+        if value and len(value) > 11:  # Assuming max length is 11
+            raise serializers.ValidationError("Phone number is too long")
+        return value
+
+    def validate_email(self, value):
+        if (
+            value
+            and User.objects.exclude(pk=self.instance.pk).filter(email=value).exists()
+        ):
+            raise serializers.ValidationError("This email is already in use")
         return value
 
 
@@ -94,3 +116,25 @@ class PasswordUpdateSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError("Current password is incorrect")
         return value
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "phone",
+            "comment",
+            "status",
+            "create_time",
+            "last_login",
+            "update_time",
+        ]
+        read_only_fields = [
+            "id",
+            "username",
+            "create_time",
+            "update_time",
+        ]
