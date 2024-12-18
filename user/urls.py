@@ -11,6 +11,7 @@ from user.views import (
     PasswordUpdateView,
     AvatarUpdateView,
     UserAvatarView,
+    UserListView,
 )
 
 urlpatterns = [
@@ -25,4 +26,5 @@ urlpatterns = [
     path("api/profile/password/", PasswordUpdateView.as_view(), name="password-update"),
     path("api/profile/avatar/", AvatarUpdateView.as_view(), name="avatar-update"),
     path("api/profile/get-avatar/", UserAvatarView.as_view(), name="get-avatar"),
+    path("api/users/", UserListView.as_view(), name="user-list"),
 ]

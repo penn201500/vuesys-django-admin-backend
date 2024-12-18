@@ -8,10 +8,12 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django_filters import OrderingFilter
 from rest_framework import status, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import (
@@ -23,12 +25,15 @@ from rest_framework_simplejwt.views import (
 from user.utils import rate_limit_user
 from user.utils import set_token_cookie
 from .authentication import CookieJWTAuthentication
+from .models import SysUser
 from .serializers import (
     CustomTokenObtainPairSerializer,
     ProfileUpdateSerializer,
     PasswordUpdateSerializer,
     UserProfileSerializer,
 )
+
+User = get_user_model()
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -490,3 +495,21 @@ class UserAvatarView(APIView):
                 {"code": 500, "message": f"Error retrieving avatar: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class UserListView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def get(self, request):
+        # Get ordering parameter from query string
+        ordering = request.query_params.get("ordering", "-create_time")
+
+        # Handle multiple ordering fields
+        order_fields = ordering.split(",")
+
+        # Query with ordering
+        users = User.objects.all().order_by(*order_fields)
+
+        serializer = UserProfileSerializer(users, many=True)
+        return Response({"code": 200, "data": serializer.data})
