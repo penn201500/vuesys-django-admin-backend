@@ -479,17 +479,27 @@ class UserAvatarView(APIView):
     authentication_classes = [CookieJWTAuthentication]
 
     def get(self, request):
-        user = request.user
-        if not user.avatar:
-            return Response(
-                {"code": 404, "message": "No avatar found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
+        user_id = request.query_params.get("user_id")
         try:
+            if user_id:
+                user = User.objects.get(id=user_id)
+            else:
+                user = request.user
+
+            if not user.avatar:
+                return Response(
+                    {"code": 404, "message": "No avatar found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
             # Return full URL for the avatar
             avatar_url = request.build_absolute_uri(user.avatar)
             return Response({"code": 200, "data": {"avatar_url": avatar_url}})
+        except User.DoesNotExist:
+            return Response(
+                {"code": 404, "message": "User not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         except Exception as e:
             return Response(
                 {"code": 500, "message": f"Error retrieving avatar: {str(e)}"},
