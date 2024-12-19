@@ -32,6 +32,7 @@ from .serializers import (
     PasswordUpdateSerializer,
     UserProfileSerializer,
 )
+from rest_framework.pagination import PageNumberPagination
 
 User = get_user_model()
 
@@ -507,9 +508,16 @@ class UserAvatarView(APIView):
             )
 
 
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class UserListView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
+    pagination_class = CustomPageNumberPagination
 
     def get(self, request):
         # Get ordering parameter from query string
@@ -521,5 +529,15 @@ class UserListView(APIView):
         # Query with ordering
         users = User.objects.all().order_by(*order_fields)
 
-        serializer = UserProfileSerializer(users, many=True)
-        return Response({"code": 200, "data": serializer.data})
+        # Paginate the results
+        paginator = self.pagination_class()
+        paginated_users = paginator.paginate_queryset(users, request)
+
+        serializer = UserProfileSerializer(paginated_users, many=True)
+        return Response(
+            {
+                "code": 200,
+                "data": serializer.data,
+                "count": users.count(),
+            }
+        )
