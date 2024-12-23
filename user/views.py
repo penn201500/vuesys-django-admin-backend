@@ -1,6 +1,8 @@
 # views.py
 
 from datetime import datetime, timezone, timedelta
+
+from django.db.models import Q
 from django.utils import timezone
 import os
 import jwt
@@ -520,24 +522,70 @@ class UserListView(APIView):
     pagination_class = CustomPageNumberPagination
 
     def get(self, request):
-        # Get ordering parameter from query string
-        ordering = request.query_params.get("ordering", "-create_time")
+        try:
+            # Get query parameters
+            search_query = request.query_params.get("search", "").strip()
+            username = request.query_params.get("username", "").strip()
+            email = request.query_params.get("email", "").strip()
+            phone = request.query_params.get("phone", "").strip()
+            comment = request.query_params.get("comment", "").strip()
+            ordering = request.query_params.get("ordering", "-create_time")
+            # Start with all users
+            queryset = User.objects.all()
 
-        # Handle multiple ordering fields
-        order_fields = ordering.split(",")
+            # Build search filter
+            search_filters = Q()
 
-        # Query with ordering
-        users = User.objects.all().order_by(*order_fields)
+            # Add individual field filters
+            if username:
+                search_filters |= Q(username__icontains=username)
+            if email:
+                search_filters |= Q(email__icontains=email)
+            if phone:
+                search_filters |= Q(phone__icontains=phone)
+            if comment:
+                search_filters |= Q(comment__icontains=comment)
 
-        # Paginate the results
-        paginator = self.pagination_class()
-        paginated_users = paginator.paginate_queryset(users, request)
+            # Add general search if provided
+            if search_query:
+                search_filters |= (
+                    Q(username__icontains=search_query)
+                    | Q(email__icontains=search_query)
+                    | Q(phone__icontains=search_query)
+                    | Q(comment__icontains=search_query)
+                )
 
-        serializer = UserProfileSerializer(paginated_users, many=True)
-        return Response(
-            {
-                "code": 200,
-                "data": serializer.data,
-                "count": users.count(),
-            }
-        )
+            # Apply search filters if any exist
+            if search_filters:
+                queryset = queryset.filter(search_filters)
+
+            # Handle ordering
+            if ordering:
+                order_fields = ordering.split(",")
+                queryset = queryset.order_by(*order_fields)
+
+            # Apply pagination
+            paginator = self.pagination_class()
+            paginated_users = paginator.paginate_queryset(queryset, request)
+
+            # Serialize the results
+            serializer = UserProfileSerializer(paginated_users, many=True)
+            # Return response with pagination data
+            return Response(
+                {
+                    "code": 200,
+                    "message": "Users retrieved successfully",
+                    "data": serializer.data,
+                    "count": queryset.count(),
+                    "page": int(request.query_params.get("page", 1)),
+                    "pageSize": int(
+                        request.query_params.get("pageSize", paginator.page_size)
+                    ),
+                }
+            )
+
+        except Exception as e:
+            return Response(
+                {"code": 500, "message": f"An error occurred: {str(e)}", "data": None},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
