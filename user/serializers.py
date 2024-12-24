@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
+from role.models import SysUserRole
+
 User = get_user_model()
 
 
@@ -55,8 +57,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             ),
         }
 
-        data["remember_me"] = attrs.get("remember_me", False)
+        # Fetch the user's roles
+        user_roles = SysUserRole.objects.filter(user=self.user).select_related("role")
+        data["user"]["roles"] = [
+            {"id": ur.role.id, "name": ur.role.name, "code": ur.role.code}
+            for ur in user_roles
+        ]
 
+        data["remember_me"] = attrs.get("remember_me", False)
         refresh = self.get_token(self.user)
         # Add refresh_me in the refresh token
         refresh["remember_me"] = data["remember_me"]
@@ -119,6 +127,9 @@ class PasswordUpdateSerializer(serializers.Serializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+
+    roles = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -131,10 +142,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "create_time",
             "last_login",
             "update_time",
+            "roles",
         ]
         read_only_fields = [
             "id",
             "username",
             "create_time",
             "update_time",
+        ]
+
+    def get_roles(self, obj):
+        user_roles = SysUserRole.objects.filter(user=obj).select_related("role")
+
+        return [
+            {"id": ur.role.id, "name": ur.role.name, "code": ur.role.code}
+            for ur in user_roles
         ]
