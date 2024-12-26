@@ -642,3 +642,19 @@ class UserRoleUpdateView(APIView):
                 {"code": 500, "message": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class UserProfileDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def get(self, request, user_id):
+        if not request.user.roles.filter(code="admin").exists():
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            user = User.objects.get(id=user_id)
+            serializer = UserProfileSerializer(user)
+            return Response({"code": 200, "data": serializer.data})
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)

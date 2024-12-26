@@ -13,6 +13,7 @@ from user.views import (
     UserAvatarView,
     UserListView,
     UserRoleUpdateView,
+    UserProfileDetailView,
 )
 
 urlpatterns = [
@@ -29,4 +30,9 @@ urlpatterns = [
     path("api/profile/get-avatar/", UserAvatarView.as_view(), name="get-avatar"),
     path("api/users/", UserListView.as_view(), name="user-list"),
     path("api/profile/roles/", UserRoleUpdateView.as_view(), name="user-role-update"),
+    path(
+        "api/users/<int:user_id>/",
+        UserProfileDetailView.as_view(),
+        name="user-profile-detail",
+    ),
 ]
