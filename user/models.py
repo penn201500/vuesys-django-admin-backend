@@ -4,6 +4,12 @@ from django.contrib.auth.models import AbstractUser
 
 # Create your models here.
 class SysUser(AbstractUser):
+    @property
+    def roles(self):
+        from role.models import SysRole
+
+        return SysRole.objects.filter(sysuserrole__user=self)
+
     avatar = models.CharField(max_length=255, null=True, verbose_name="Avatar")
     email = models.CharField(max_length=100, null=True, verbose_name="Email")
     phone = models.CharField(max_length=11, null=True, verbose_name="Phone")

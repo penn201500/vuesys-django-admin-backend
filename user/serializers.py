@@ -6,6 +6,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 
 from role.models import SysUserRole
+from user.models import SysUser
 
 User = get_user_model()
 
@@ -131,7 +132,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
 
     class Meta:
-        model = User
+        model = SysUser
         fields = [
             "id",
             "username",
