@@ -7,13 +7,13 @@ from user.views import (
     GetCSRFTokenView,
     CustomTokenRefreshView,
     SignupView,
-    ProfileUpdateView,
     PasswordUpdateView,
     AvatarUpdateView,
     UserAvatarView,
     UserListView,
     UserRoleUpdateView,
     UserProfileDetailView,
+    UserProfileUpdateView,
 )
 
 urlpatterns = [
@@ -24,7 +24,7 @@ urlpatterns = [
     path("api/token/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
     path("api/csrf/", GetCSRFTokenView.as_view(), name="csrf"),
     path("api/signup/", SignupView.as_view(), name="signup"),
-    path("api/profile/update/", ProfileUpdateView.as_view(), name="profile-update"),
+    path("api/profile/update/", UserProfileUpdateView.as_view(), name="profile-update"),
     path("api/profile/password/", PasswordUpdateView.as_view(), name="password-update"),
     path("api/profile/avatar/", AvatarUpdateView.as_view(), name="avatar-update"),
     path("api/profile/get-avatar/", UserAvatarView.as_view(), name="get-avatar"),
@@ -34,5 +34,10 @@ urlpatterns = [
         "api/users/<int:user_id>/",
         UserProfileDetailView.as_view(),
         name="user-profile-detail",
+    ),
+    path(
+        "api/users/<int:user_id>/update/",
+        UserProfileUpdateView.as_view(),
+        name="user-profile-update",
     ),
 ]

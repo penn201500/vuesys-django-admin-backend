@@ -372,14 +372,29 @@ class SignupView(APIView):
             )
 
 
-class ProfileUpdateView(APIView):
+class UserProfileUpdateView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
-    def patch(self, request):
-        serializer = ProfileUpdateSerializer(
-            request.user, data=request.data, partial=True
-        )
+    def patch(self, request, user_id):
+        # Check if the requesting user has admin privileges
+        if not request.user.roles.filter(code="admin").exists():
+            return Response(
+                {
+                    "code": 403,
+                    "message": "You don't have permission to perform this action",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"code": 404, "message": "User not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = ProfileUpdateSerializer(user, data=request.data, partial=True)
 
         if serializer.is_valid():
             serializer.save(update_time=timezone.now())
