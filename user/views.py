@@ -83,15 +83,14 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 user, access_token_lifetime, refresh_token_lifetime
             )
 
+            serializer = UserProfileSerializer(user)
+            user_data = serializer.data
+
             response = Response(
                 {
                     "code": 200,
                     "message": "Login successful",
-                    "user": {
-                        "id": user.id,
-                        "username": user.username,
-                        "email": user.email,
-                    },
+                    "user": user_data,
                     "access": tokens["access"],
                 },
                 status=status.HTTP_200_OK,
