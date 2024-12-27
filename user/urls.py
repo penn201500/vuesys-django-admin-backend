@@ -24,18 +24,26 @@ urlpatterns = [
     path("api/token/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
     path("api/csrf/", GetCSRFTokenView.as_view(), name="csrf"),
     path("api/signup/", SignupView.as_view(), name="signup"),
-    path("api/profile/update/", UserProfileUpdateView.as_view(), name="profile-update"),
-    path("api/profile/password/", PasswordUpdateView.as_view(), name="password-update"),
-    path("api/profile/avatar/", AvatarUpdateView.as_view(), name="avatar-update"),
-    path("api/profile/get-avatar/", UserAvatarView.as_view(), name="get-avatar"),
-    path("api/users/", UserListView.as_view(), name="user-list"),
+    # path("api/profile/update/", UserProfileUpdateView.as_view(), name="profile-update"),
+    # path("api/profile/avatar/", AvatarUpdateView.as_view(), name="avatar-update"),
     path("api/profile/roles/", UserRoleUpdateView.as_view(), name="user-role-update"),
     # Add new admin routes for managing other users
+    # avatar
+    path("api/profile/get-avatar/", UserAvatarView.as_view(), name="get-avatar"),
     path(
         "api/users/<int:user_id>/avatar/",
         AvatarUpdateView.as_view(),
         name="user-avatar-update",
     ),
+    # password
+    path("api/profile/password/", PasswordUpdateView.as_view(), name="password-update"),
+    path(
+        "api/users/<int:user_id>/password/",
+        PasswordUpdateView.as_view(),
+        name="user-password-update",
+    ),
+    # user
+    path("api/users/", UserListView.as_view(), name="user-list"),
     path(
         "api/users/<int:user_id>/",
         UserProfileDetailView.as_view(),

@@ -415,10 +415,28 @@ class PasswordUpdateView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
-    def post(self, request):
-        serializer = PasswordUpdateSerializer(
-            data=request.data, context={"user": request.user}
-        )
+    def post(self, request, user_id=None):
+        # If user_id is provided, check admin privileges
+        if user_id:
+            if not request.user.roles.filter(code="admin").exists():
+                return Response(
+                    {
+                        "code": 403,
+                        "message": "You don't have permission to perform this action",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response(
+                    {"code": 404, "message": "User not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            user = request.user
+
+        serializer = PasswordUpdateSerializer(data=request.data, context={"user": user})
 
         if serializer.is_valid():
             user = request.user
