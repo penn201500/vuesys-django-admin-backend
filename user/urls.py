@@ -24,7 +24,6 @@ urlpatterns = [
     path("api/csrf/", GetCSRFTokenView.as_view(), name="csrf"),
     path("api/signup/", SignupView.as_view(), name="signup"),
     # path("api/profile/update/", UserProfileUpdateView.as_view(), name="profile-update"),
-    # path("api/profile/avatar/", AvatarUpdateView.as_view(), name="avatar-update"),
     # path("api/profile/roles/", UserRoleUpdateView.as_view(), name="user-role-update"),
     # Add new admin routes for managing other users
     # roles
@@ -36,6 +35,7 @@ urlpatterns = [
     ),
     # avatar
     path("api/profile/get-avatar/", UserAvatarView.as_view(), name="get-avatar"),
+    path("api/profile/avatar/", AvatarUpdateView.as_view(), name="avatar-update"),
     path(
         "api/users/<int:user_id>/avatar/",
         AvatarUpdateView.as_view(),
