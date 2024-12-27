@@ -14,12 +14,12 @@ from user.views import (
     UserRoleUpdateView,
     UserProfileDetailView,
     UserProfileUpdateView,
+    UserDeleteView,
 )
 
 urlpatterns = [
     path("api/login/", CustomTokenObtainPairView.as_view(), name="login"),
     path("api/logout/", LogoutView.as_view(), name="logout"),
-    path("api/user-info/", UserInfoView.as_view(), name="user_info"),
     path("api/token/validity/", TokenValidityView.as_view(), name="token_validity"),
     path("api/token/refresh/", CustomTokenRefreshView.as_view(), name="token_refresh"),
     path("api/csrf/", GetCSRFTokenView.as_view(), name="csrf"),
@@ -27,6 +27,7 @@ urlpatterns = [
     # path("api/profile/update/", UserProfileUpdateView.as_view(), name="profile-update"),
     # path("api/profile/avatar/", AvatarUpdateView.as_view(), name="avatar-update"),
     # path("api/profile/roles/", UserRoleUpdateView.as_view(), name="user-role-update"),
+    path("api/users/<int:user_id>/", UserDeleteView.as_view(), name="user-delete"),
     # Add new admin routes for managing other users
     # roles
     # fetch roles url in roles/urls.py
@@ -51,6 +52,7 @@ urlpatterns = [
     ),
     # user
     path("api/users/", UserListView.as_view(), name="user-list"),
+    path("api/user-info/", UserInfoView.as_view(), name="user_info"),
     path(
         "api/users/<int:user_id>/",
         UserProfileDetailView.as_view(),

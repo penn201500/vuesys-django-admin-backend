@@ -10,12 +10,10 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django_filters import OrderingFilter
 from rest_framework import status, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import (
@@ -29,7 +27,6 @@ from role.models import SysRole, SysUserRole
 from user.utils import rate_limit_user
 from user.utils import set_token_cookie
 from .authentication import CookieJWTAuthentication
-from .models import SysUser
 from .serializers import (
     CustomTokenObtainPairSerializer,
     ProfileUpdateSerializer,
@@ -38,7 +35,7 @@ from .serializers import (
 )
 from rest_framework.pagination import PageNumberPagination
 
-User = get_user_model()
+User = get_user_model()  # Django auth method
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -744,3 +741,45 @@ class UserProfileDetailView(APIView):
             return Response({"code": 200, "data": serializer.data})
         except User.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class UserDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def delete(self, request, user_id):
+        # Check if the requesting user has admin privileges
+        if not request.user.roles.filter(code="admin").exists():
+            return Response(
+                {
+                    "code": 403,
+                    "message": "You don't have permission to perform this action",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            user = User.objects.get(id=user_id)
+
+            # Check if user has admin role
+            if user.roles.filter(code="admin").exists():
+                return Response(
+                    {"code": 400, "message": "Cannot delete user with admin role"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Delete the user
+            user.delete()
+
+            return Response({"code": 200, "message": "User deleted successfully"})
+
+        except User.DoesNotExist:
+            return Response(
+                {"code": 404, "message": "User not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except Exception as e:
+            return Response(
+                {"code": 500, "message": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
