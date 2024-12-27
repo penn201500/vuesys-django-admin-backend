@@ -649,9 +649,28 @@ class UserRoleUpdateView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
-    def post(self, request):
-        try:
+    def post(self, request, user_id=None):
+        # For role updates, either editing own roles or admin editing others
+        if user_id:
+            if not request.user.roles.filter(code="admin").exists():
+                return Response(
+                    {
+                        "code": 403,
+                        "message": "You don't have permission to perform this action",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response(
+                    {"code": 404, "message": "User not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        else:
             user = request.user
+
+        try:
             role_ids = request.data.get("roles", [])
 
             if not role_ids:
@@ -688,7 +707,6 @@ class UserRoleUpdateView(APIView):
                     "data": {"roles": role_ids},
                 }
             )
-
         except Exception as e:
             return Response(
                 {"code": 500, "message": str(e)},
