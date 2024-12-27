@@ -650,56 +650,24 @@ class UserRoleUpdateView(APIView):
     authentication_classes = [CookieJWTAuthentication]
 
     def post(self, request, user_id=None):
-        # For role updates, either editing own roles or admin editing others
         if user_id:
-            if not request.user.roles.filter(code="admin").exists():
-                return Response(
-                    {
-                        "code": 403,
-                        "message": "You don't have permission to perform this action",
-                    },
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-            try:
-                user = User.objects.get(id=user_id)
-            except User.DoesNotExist:
-                return Response(
-                    {"code": 404, "message": "User not found"},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
+            user, error_response = self.get_user_for_admin(user_id, request.user)
+            if error_response:
+                return error_response
         else:
             user = request.user
 
+        role_ids = request.data.get("roles", [])
+        if not role_ids:
+            return self.bad_request_response("At least one role must be selected")
+
+        if not self.can_assign_roles(user, role_ids, request.user):
+            return self.forbidden_response(
+                "Cannot assign admin role without admin privileges"
+            )
+
         try:
-            role_ids = request.data.get("roles", [])
-
-            if not role_ids:
-                return Response(
-                    {"code": 400, "message": "At least one role must be selected"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            # Prevent non-admin from managing admin role
-            if not user.roles.filter(code="admin").exists():
-                admin_role = SysRole.objects.filter(code="admin").first()
-                if admin_role and admin_role.id in role_ids:
-                    return Response(
-                        {
-                            "code": 403,
-                            "message": "Cannot assign admin role without admin privileges",
-                        },
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
-
-            # Update user roles
-            SysUserRole.objects.filter(user=user).delete()
-            for role_id in role_ids:
-                try:
-                    role = SysRole.objects.get(id=role_id)
-                    SysUserRole.objects.create(user=user, role=role)
-                except SysRole.DoesNotExist:
-                    continue
-
+            self.update_user_roles(user, role_ids)
             return Response(
                 {
                     "code": 200,
@@ -708,10 +676,58 @@ class UserRoleUpdateView(APIView):
                 }
             )
         except Exception as e:
-            return Response(
-                {"code": 500, "message": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            return self.internal_error_response(str(e))
+
+    def get_user_for_admin(self, user_id, current_user):
+        if not current_user.roles.filter(code="admin").exists():
+            return None, self.forbidden_response(
+                "You don't have permission to perform this action"
             )
+        try:
+            user = User.objects.get(id=user_id)
+            return user, None
+        except User.DoesNotExist:
+            return None, self.not_found_response("User not found")
+
+    def can_assign_roles(self, user, role_ids, current_user):
+        if current_user.roles.filter(code="admin").exists():
+            return True
+        admin_role = SysRole.objects.filter(code="admin").first()
+        return not (admin_role and admin_role.id in role_ids)
+
+    def update_user_roles(self, user, role_ids):
+        SysUserRole.objects.filter(user=user).delete()
+        for role_id in role_ids:
+            try:
+                role = SysRole.objects.get(id=role_id)
+                SysUserRole.objects.create(user=user, role=role)
+            except SysRole.DoesNotExist:
+                continue
+
+    @staticmethod
+    def bad_request_response(message):
+        return Response(
+            {"code": 400, "message": message}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    @staticmethod
+    def forbidden_response(message):
+        return Response(
+            {"code": 403, "message": message}, status=status.HTTP_403_FORBIDDEN
+        )
+
+    @staticmethod
+    def not_found_response(message):
+        return Response(
+            {"code": 404, "message": message}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    @staticmethod
+    def internal_error_response(message):
+        return Response(
+            {"code": 500, "message": message},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 class UserProfileDetailView(APIView):
