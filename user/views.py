@@ -314,7 +314,6 @@ class SignupView(APIView):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        User = get_user_model()
         data = request.data
 
         # Validate required fields
@@ -348,6 +347,10 @@ class SignupView(APIView):
                 create_time=timezone.now(),
                 status=1,  # Active status
             )
+
+            # Assign default role to created user
+            default_role = SysRole.objects.get(code="common")
+            SysUserRole.objects.create(user=user, role=default_role)
 
             return Response(
                 {
