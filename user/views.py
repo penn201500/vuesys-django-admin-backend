@@ -437,7 +437,27 @@ class AvatarUpdateView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
-    def post(self, request):
+    def post(self, request, user_id=None):
+        # If user_id is provided, check admin privileges
+        if user_id:
+            if not request.user.roles.filter(code="admin").exists():
+                return Response(
+                    {
+                        "code": 403,
+                        "message": "You don't have permission to perform this action",
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return Response(
+                    {"code": 404, "message": "User not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            user = request.user
+
         if "avatar" not in request.FILES:
             return Response(
                 {"code": 400, "message": "No avatar file provided"},
@@ -481,8 +501,8 @@ class AvatarUpdateView(APIView):
                 destination.write(chunk)
 
         # Update user avatar field
-        request.user.avatar = f"/media/{avatar_path}"
-        request.user.save()
+        user.avatar = f"/media/{avatar_path}"
+        user.save()
 
         return Response(
             {

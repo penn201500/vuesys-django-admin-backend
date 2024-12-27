@@ -30,6 +30,12 @@ urlpatterns = [
     path("api/profile/get-avatar/", UserAvatarView.as_view(), name="get-avatar"),
     path("api/users/", UserListView.as_view(), name="user-list"),
     path("api/profile/roles/", UserRoleUpdateView.as_view(), name="user-role-update"),
+    # Add new admin routes for managing other users
+    path(
+        "api/users/<int:user_id>/avatar/",
+        AvatarUpdateView.as_view(),
+        name="user-avatar-update",
+    ),
     path(
         "api/users/<int:user_id>/",
         UserProfileDetailView.as_view(),
