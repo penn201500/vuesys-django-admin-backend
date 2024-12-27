@@ -516,6 +516,16 @@ class AvatarUpdateView(APIView):
                 destination.write(chunk)
 
         # Update user avatar field
+        # Should delete old avatar file before saving new one
+        if user.avatar:
+            old_avatar_path = self.get_avatar_absolute_path(user.avatar)
+            if old_avatar_path and os.path.exists(old_avatar_path):
+                try:
+                    os.remove(old_avatar_path)
+                    print("Previous avatar deleted:", old_avatar_path)
+                except Exception as e:
+                    print(f"Error deleting previous avatar: {str(e)}")
+
         user.avatar = f"/media/{avatar_path}"
         user.save()
 
@@ -526,6 +536,16 @@ class AvatarUpdateView(APIView):
                 "data": {"avatar_url": request.user.avatar},
             }
         )
+
+    @staticmethod
+    def get_avatar_absolute_path(avatar_url):
+        """Convert avatar URL to absolute filesystem path."""
+
+        if not avatar_url:
+            return None
+        # Remove /media/ prefix if it exists
+        relative_path = avatar_url.replace("/media/", "", 1)
+        return os.path.join(settings.MEDIA_ROOT, relative_path)
 
 
 class UserAvatarView(APIView):
