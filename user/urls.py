@@ -14,7 +14,6 @@ from user.views import (
     UserRoleUpdateView,
     UserProfileDetailView,
     UserProfileUpdateView,
-    UserDeleteView,
 )
 
 urlpatterns = [
@@ -27,7 +26,6 @@ urlpatterns = [
     # path("api/profile/update/", UserProfileUpdateView.as_view(), name="profile-update"),
     # path("api/profile/avatar/", AvatarUpdateView.as_view(), name="avatar-update"),
     # path("api/profile/roles/", UserRoleUpdateView.as_view(), name="user-role-update"),
-    path("api/users/<int:user_id>/", UserDeleteView.as_view(), name="user-delete"),
     # Add new admin routes for managing other users
     # roles
     # fetch roles url in roles/urls.py

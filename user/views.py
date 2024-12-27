@@ -733,19 +733,23 @@ class UserProfileDetailView(APIView):
 
     def get(self, request, user_id):
         if not request.user.roles.filter(code="admin").exists():
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {
+                    "code": 403,
+                    "message": "You don't have permission to perform this action",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         try:
             user = User.objects.get(id=user_id)
             serializer = UserProfileSerializer(user)
             return Response({"code": 200, "data": serializer.data})
         except User.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-
-class UserDeleteView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [CookieJWTAuthentication]
+            return Response(
+                {"code": 404, "message": "User not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
     def delete(self, request, user_id):
         # Check if the requesting user has admin privileges
