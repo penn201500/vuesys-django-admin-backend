@@ -772,7 +772,10 @@ class UserProfileDetailView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Delete the user
+            # First delete all role associations
+            SysUserRole.objects.filter(user=user).delete()
+
+            # Then delete the user
             user.delete()
 
             return Response({"code": 200, "message": "User deleted successfully"})
