@@ -19,7 +19,7 @@ class SysRole(models.Model):
     )  # 1: active, 0: inactive
     is_system = models.BooleanField(
         default=False, verbose_name="Is System Role"
-    )  # For admin/common roles
+    )  # For admin role
     deleted_at = models.DateTimeField(
         null=True, blank=True, verbose_name="Deletion Date"
     )  # For soft delete
