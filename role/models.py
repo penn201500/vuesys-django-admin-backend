@@ -23,11 +23,11 @@ class SysRole(models.Model):
     deleted_at = models.DateTimeField(
         null=True, blank=True, verbose_name="Deletion Date"
     )  # For soft delete
-    create_time = models.DateField(
+    create_time = models.DateTimeField(
         null=True,
         verbose_name="Created Time",
     )
-    update_time = models.DateField(null=True, verbose_name="Updated Time")
+    update_time = models.DateTimeField(null=True, verbose_name="Updated Time")
     remark = models.CharField(max_length=500, null=True, verbose_name="Comment Time")
 
     class Meta:
