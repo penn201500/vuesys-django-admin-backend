@@ -17,7 +17,7 @@ class SysRoleSerializer(serializers.ModelSerializer):
             "is_system",
             "create_time",
             "update_time",
-            "remark",
+            # "remark",
             "is_active",
         ]
         read_only_fields = ["is_system", "create_time", "update_time"]

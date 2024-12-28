@@ -10,10 +10,8 @@ from user.models import SysUser
 
 class SysRole(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=30, null=True, verbose_name="Role Name")
-    code = models.CharField(
-        max_length=100, null=True, verbose_name="Role Permission Code"
-    )
+    name = models.CharField(max_length=30, verbose_name="Role Name")
+    code = models.CharField(max_length=100, verbose_name="Role Permission Code")
     status = models.IntegerField(
         default=1, verbose_name="Status"
     )  # 1: active, 0: inactive
