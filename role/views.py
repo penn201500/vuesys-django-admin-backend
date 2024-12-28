@@ -8,17 +8,27 @@ from .serializers import SysRoleSerializer
 from user.authentication import CookieJWTAuthentication
 
 
-class RoleListView(APIView):
+class AdminRequiredMixin:
+    """Mixin to check if user has admin role"""
+
+    def check_admin(self, request):
+        if not request.user.roles.filter(code="admin").exists():
+            return Response(
+                {"code": 403, "message": "Admin privileges required"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return None
+
+
+class RoleListView(AdminRequiredMixin, APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
     def get(self, request):
         # Check admin permission
-        if not request.user.roles.filter(code="admin").exists():
-            return Response(
-                {"code": 403, "message": "Permission denied"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
 
         try:
             # Get query parameters
@@ -56,11 +66,9 @@ class RoleListView(APIView):
 
     def post(self, request):
         # Check admin permission
-        if not request.user.roles.filter(code="admin").exists():
-            return Response(
-                {"code": 403, "message": "Permission denied"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
 
         serializer = SysRoleSerializer(data=request.data)
         if serializer.is_valid():
