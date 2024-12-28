@@ -180,3 +180,41 @@ class RoleDetailView(AdminRequiredMixin, APIView):
         # Perform soft delete
         role.soft_delete()
         return Response({"code": 200, "message": "Role deleted successfully"})
+
+
+class RoleStatusView(AdminRequiredMixin, APIView):
+    """Toggle role active status"""
+
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def post(self, request, pk):
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
+
+        role = SysRole.objects.filter(pk=pk, deleted_at__isnull=True).first()
+        if not role:
+            return Response(
+                {"code": 404, "message": "Role not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if role.is_system:
+            return Response(
+                {"code": 400, "message": "System roles status cannot be modified"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Toggle status
+        role.status = 0 if role.status == 1 else 1
+        role.save()
+
+        serializer = SysRoleSerializer(role)
+        return Response(
+            {
+                "code": 200,
+                "message": "Role status updated successfully",
+                "data": serializer.data,
+            }
+        )
