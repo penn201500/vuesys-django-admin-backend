@@ -1,63 +1,67 @@
+from django.db.models import Q
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from user.authentication import CookieJWTAuthentication
-from role.models import SysUserRole
-from .models import SysMenu, SysRoleMenu
+from .models import SysMenu
+from .serializers import MenuSerializer
 
 
-class UserMenuView(APIView):
+class AdminRequiredMixin:
+    def check_admin(self, request):
+        if not request.user.roles.filter(code="admin").exists():
+            return Response(
+                {"code": 403, "message": "Admin privileges required"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return None
+
+
+class MenuListView(AdminRequiredMixin, APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
     def get(self, request):
-        # Get all roles associated with the logged-in user
-        user_roles = SysUserRole.objects.filter(user_id=request.user.id).values_list(
-            "role_id", flat=True
-        )
-        # Get all menu IDs associated with these roles
-        menu_ids = (
-            SysRoleMenu.objects.filter(role_id__in=user_roles)
-            .values_list("menu_id", flat=True)
-            .distinct()
-        )
-        # Fetch the menus and order them by `order_num`
-        menus = SysMenu.objects.filter(id__in=menu_ids).order_by("order_num")
-        # Build a hierarchical menu structure
-        menu_data = self.build_menu_hierarchy(menus)
-        return Response({"code": 200, "data": menu_data}, status=200)
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
 
-    def build_menu_hierarchy(self, menus):
-        # Convert queryset to a list of dicts for easier processing
-        menu_list = list(
-            menus.values(
-                "id",
-                "name",
-                "icon",
-                "parent_id",
-                "order_num",
-                "path",
-                "component",
-                "menu_type",
-                "perms",
-                "create_time",
-                "update_time",
-                "remark",
+        try:
+            search = request.query_params.get("search", "").strip()
+            queryset = SysMenu.objects.filter(deleted_at__isnull=True)
+
+            # Apply search if provided
+            if search:
+                queryset = queryset.filter(
+                    Q(name__icontains=search)
+                    | Q(path__icontains=search)
+                    | Q(component__icontains=search)
+                    | Q(perms__icontains=search)
+                    | Q(remark__icontains=search)
+                )
+
+            # Build tree structure
+            menu_tree = self.build_menu_tree(queryset)
+
+            return Response({"code": 200, "message": "Success", "data": menu_tree})
+        except Exception as e:
+            return Response(
+                {"code": 500, "message": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        )
 
-        # Create a dictionary of menus keyed by parent_id
+    def build_menu_tree(self, queryset):
         menu_dict = {}
-        for m in menu_list:
-            parent_id = m["parent_id"] if m["parent_id"] else 0
-            menu_dict.setdefault(parent_id, []).append(m)
+        for menu in queryset:
+            menu_dict[menu.id] = menu
+            menu.children = []
 
-        # Recursively build the tree
-        def build_tree(parent_id=0):
-            children = []
-            for menu in menu_dict.get(parent_id, []):
-                menu["children"] = build_tree(menu["id"])
-                children.append(menu)
-            return children
+        root_menus = []
+        for menu in queryset:
+            if menu.parent_id and menu.parent_id in menu_dict:
+                menu_dict[menu.parent_id].children.append(menu)
+            else:
+                root_menus.append(menu)
 
-        return build_tree()
+        return MenuSerializer(root_menus, many=True).data
