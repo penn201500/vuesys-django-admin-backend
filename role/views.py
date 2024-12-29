@@ -3,6 +3,8 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+
+from user.views import CustomPageNumberPagination
 from .models import SysRole, SysUserRole
 from .serializers import SysRoleSerializer
 from user.authentication import CookieJWTAuthentication
@@ -23,6 +25,7 @@ class AdminRequiredMixin:
 class RoleListView(AdminRequiredMixin, APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
+    pagination_class = CustomPageNumberPagination
 
     def get(self, request):
         # Check admin permission
@@ -50,12 +53,21 @@ class RoleListView(AdminRequiredMixin, APIView):
             if ordering:
                 queryset = queryset.order_by(ordering)
 
+            # Apply pagination
+            paginator = self.pagination_class()
+            paginated_users = paginator.paginate_queryset(queryset, request)
+
             serializer = SysRoleSerializer(queryset, many=True)
             return Response(
                 {
                     "code": 200,
                     "message": "Roles retrieved successfully",
                     "data": serializer.data,
+                    "count": queryset.count(),
+                    "page": int(request.query_params.get("page", 1)),
+                    "pageSize": int(
+                        request.query_params.get("pageSize", paginator.page_size)
+                    ),
                 }
             )
         except Exception as e:
