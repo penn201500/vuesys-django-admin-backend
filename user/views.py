@@ -678,8 +678,8 @@ class UserRoleUpdateView(APIView):
             user = request.user
 
         role_ids = request.data.get("roles", [])
-        if not role_ids:
-            return self.bad_request_response("At least one role must be selected")
+        # if not role_ids:
+        #     return self.bad_request_response("At least one role must be selected")
 
         if not self.can_assign_roles(user, role_ids, request.user):
             return self.forbidden_response(
