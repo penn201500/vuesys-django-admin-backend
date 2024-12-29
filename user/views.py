@@ -599,6 +599,9 @@ class UserListView(APIView):
         try:
             # Get query parameters
             search_query = request.query_params.get("search", "").strip()
+            show_deleted = (
+                request.query_params.get("show_deleted", "").lower() == "true"
+            )
             username = request.query_params.get("username", "").strip()
             email = request.query_params.get("email", "").strip()
             phone = request.query_params.get("phone", "").strip()
@@ -606,6 +609,10 @@ class UserListView(APIView):
             ordering = request.query_params.get("ordering", "-create_time")
             # Start with all users
             queryset = User.objects.all()
+
+            # Filter deleted/non-deleted users
+            if not show_deleted:
+                queryset = queryset.filter(deleted_at__isnull=True)
 
             # Build search filter
             search_filters = Q()
@@ -868,7 +875,8 @@ class UserProfileDetailView(APIView):
             SysUserRole.objects.filter(user=user).delete()
 
             # Then delete the user
-            user.delete()
+            # user.delete()
+            user.soft_delete()
 
             return Response({"code": 200, "message": "User deleted successfully"})
 

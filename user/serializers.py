@@ -128,8 +128,8 @@ class PasswordUpdateSerializer(serializers.Serializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-
     roles = serializers.SerializerMethodField()
+    is_active = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = SysUser
@@ -144,18 +144,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "last_login",
             "update_time",
             "roles",
+            "deleted_at",
+            "is_active",
         ]
         read_only_fields = [
             "id",
             "username",
             "create_time",
             "update_time",
+            "deleted_at",
         ]
 
     def get_roles(self, obj):
-        user_roles = SysUserRole.objects.filter(user=obj).select_related("role")
-
+        user_roles = obj.roles.filter(
+            deleted_at__isnull=True
+        )  # Only get non-deleted roles
         return [
-            {"id": ur.role.id, "name": ur.role.name, "code": ur.role.code}
-            for ur in user_roles
+            {"id": role.id, "name": role.name, "code": role.code} for role in user_roles
         ]
