@@ -17,10 +17,13 @@ class SysRoleSerializer(serializers.ModelSerializer):
             "is_system",
             "create_time",
             "update_time",
-            # "remark",
+            "remark",
             "is_active",
         ]
         read_only_fields = ["is_system", "create_time", "update_time"]
+        extra_kwargs = {
+            "remark": {"required": False, "allow_null": True}  # Make remark optional
+        }
 
     def validate_code(self, value):
         """
