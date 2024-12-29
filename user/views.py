@@ -38,6 +38,18 @@ from rest_framework.pagination import PageNumberPagination
 User = get_user_model()  # Django auth method
 
 
+class AdminRequiredMixin:
+    """Mixin to check if user has admin role"""
+
+    def check_admin(self, request):
+        if not request.user.roles.filter(code="admin").exists():
+            return Response(
+                {"code": 403, "message": "Admin privileges required"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return None
+
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     """
     Custom view to handle JWT authentication and return custom response structure.
@@ -377,14 +389,10 @@ class UserProfileUpdateView(APIView):
 
     def patch(self, request, user_id):
         # Check if the requesting user has admin privileges
-        if not request.user.roles.filter(code="admin").exists():
-            return Response(
-                {
-                    "code": 403,
-                    "message": "You don't have permission to perform this action",
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
+
         try:
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
@@ -418,14 +426,9 @@ class PasswordUpdateView(APIView):
     def post(self, request, user_id=None):
         # If user_id is provided, check admin privileges
         if user_id:
-            if not request.user.roles.filter(code="admin").exists():
-                return Response(
-                    {
-                        "code": 403,
-                        "message": "You don't have permission to perform this action",
-                    },
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+            admin_check = self.check_admin(request)
+            if admin_check:
+                return admin_check
             try:
                 user = User.objects.get(id=user_id)
             except User.DoesNotExist:
@@ -458,14 +461,9 @@ class AvatarUpdateView(APIView):
     def post(self, request, user_id=None):
         # If user_id is provided, check admin privileges
         if user_id:
-            if not request.user.roles.filter(code="admin").exists():
-                return Response(
-                    {
-                        "code": 403,
-                        "message": "You don't have permission to perform this action",
-                    },
-                    status=status.HTTP_403_FORBIDDEN,
-                )
+            admin_check = self.check_admin(request)
+            if admin_check:
+                return admin_check
             try:
                 user = User.objects.get(id=user_id)
             except User.DoesNotExist:
@@ -674,14 +672,9 @@ class UserListView(APIView):
     def post(self, request):
         """Create a new user with default common role."""
         # Check if the requesting user has admin privileges
-        if not request.user.roles.filter(code="admin").exists():
-            return Response(
-                {
-                    "code": 403,
-                    "message": "You don't have permission to perform this action",
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
 
         data = request.data
         required_fields = ["username", "password", "email"]
@@ -831,14 +824,9 @@ class UserProfileDetailView(APIView):
     authentication_classes = [CookieJWTAuthentication]
 
     def get(self, request, user_id):
-        if not request.user.roles.filter(code="admin").exists():
-            return Response(
-                {
-                    "code": 403,
-                    "message": "You don't have permission to perform this action",
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
 
         try:
             user = User.objects.get(id=user_id)
@@ -852,14 +840,9 @@ class UserProfileDetailView(APIView):
 
     def delete(self, request, user_id):
         # Check if the requesting user has admin privileges
-        if not request.user.roles.filter(code="admin").exists():
-            return Response(
-                {
-                    "code": 403,
-                    "message": "You don't have permission to perform this action",
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
 
         try:
             user = User.objects.get(id=user_id)
