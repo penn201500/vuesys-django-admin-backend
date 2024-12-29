@@ -1,6 +1,6 @@
 # views.py
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 from django.db.models import Q
 from django.utils import timezone
