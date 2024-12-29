@@ -26,7 +26,9 @@ class SysRole(models.Model):
         verbose_name="Created Time",
     )
     update_time = models.DateTimeField(auto_now=True, verbose_name="Updated Time")
-    remark = models.CharField(max_length=500, null=True, verbose_name="Comment")
+    remark = models.CharField(
+        max_length=500, null=True, blank=True, verbose_name="Comment"
+    )
 
     class Meta:
         db_table = "sys_role"
