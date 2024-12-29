@@ -664,6 +664,75 @@ class UserListView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+    def post(self, request):
+        """Create a new user with default common role."""
+        # Check if the requesting user has admin privileges
+        if not request.user.roles.filter(code="admin").exists():
+            return Response(
+                {
+                    "code": 403,
+                    "message": "You don't have permission to perform this action",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        data = request.data
+        required_fields = ["username", "password", "email"]
+
+        # Validate required fields
+        for field in required_fields:
+            if not data.get(field):
+                return Response(
+                    {"code": 400, "message": f"{field} is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Check if username already exists
+        if User.objects.filter(username=data["username"]).exists():
+            return Response(
+                {"code": 400, "message": "Username already exists"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check if email already exists
+        if User.objects.filter(email=data["email"]).exists():
+            return Response(
+                {"code": 400, "message": "Email already exists"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            # Create user instance
+            user = User.objects.create_user(
+                username=data["username"],
+                email=data["email"],
+                password=data["password"],
+                phone=data.get("phone"),
+                comment=data.get("comment"),
+                create_time=timezone.now(),
+                status=1,  # Active status
+            )
+
+            # Get the common role and assign it
+            common_role = SysRole.objects.get(code="common")
+            SysUserRole.objects.create(user=user, role=common_role)
+
+            # Serialize and return the created user
+            serializer = UserProfileSerializer(user)
+            return Response(
+                {
+                    "code": 200,
+                    "message": "User created successfully",
+                    "data": serializer.data,
+                }
+            )
+
+        except Exception as e:
+            return Response(
+                {"code": 500, "message": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
 
 class UserRoleUpdateView(APIView):
     permission_classes = [IsAuthenticated]
