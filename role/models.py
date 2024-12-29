@@ -43,12 +43,6 @@ class SysRole(models.Model):
         return self.status == 1 and not self.deleted_at
 
 
-class SysRoleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SysRole
-        fields = "__all__"
-
-
 class SysUserRole(models.Model):
     id = models.AutoField(primary_key=True)
     role = models.ForeignKey(SysRole, on_delete=models.PROTECT)
@@ -56,9 +50,3 @@ class SysUserRole(models.Model):
 
     class Meta:
         db_table = "sys_user_role"
-
-
-class SysUserRoleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SysUserRole
-        fields = "__amll__"
