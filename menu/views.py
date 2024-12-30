@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from user.authentication import CookieJWTAuthentication
-from .models import SysMenu
+from .models import SysMenu, SysRoleMenu
 from .serializers import MenuSerializer
 
 
@@ -65,3 +65,107 @@ class MenuListView(AdminRequiredMixin, APIView):
                 root_menus.append(menu)
 
         return MenuSerializer(root_menus, many=True).data
+
+
+class MenuDetailView(AdminRequiredMixin, APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def get(self, request, pk):
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
+
+        try:
+            menu = SysMenu.objects.get(id=pk, deleted_at__isnull=True)
+            return Response({"code": 200, "data": MenuSerializer(menu).data})
+        except SysMenu.DoesNotExist:
+            return Response(
+                {"code": 404, "message": "Menu not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    def put(self, request, pk):
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
+
+        try:
+            menu = SysMenu.objects.get(id=pk, deleted_at__isnull=True)
+            serializer = MenuSerializer(menu, data=request.data, partial=True)
+
+            if serializer.is_valid():
+                # Check if this would create a circular reference
+                new_parent_id = request.data.get("parent_id")
+                if new_parent_id and not self.is_valid_parent(pk, new_parent_id):
+                    return Response(
+                        {
+                            "code": 400,
+                            "message": "Invalid parent: would create circular reference",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                serializer.save()
+                return Response(
+                    {
+                        "code": 200,
+                        "message": "Menu updated successfully",
+                        "data": serializer.data,
+                    }
+                )
+
+            return Response(
+                {"code": 400, "message": "Invalid data", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        except SysMenu.DoesNotExist:
+            return Response(
+                {"code": 404, "message": "Menu not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    def delete(self, request, pk):
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
+
+        try:
+            menu = SysMenu.objects.get(id=pk, deleted_at__isnull=True)
+
+            # Check if menu has children
+            if SysMenu.objects.filter(parent_id=pk, deleted_at__isnull=True).exists():
+                return Response(
+                    {"code": 400, "message": "Cannot delete menu with children"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Delete role-menu associations
+            SysRoleMenu.objects.filter(menu=menu).delete()
+
+            menu.soft_delete()
+            return Response({"code": 200, "message": "Menu deleted successfully"})
+
+        except SysMenu.DoesNotExist:
+            return Response(
+                {"code": 404, "message": "Menu not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    def is_valid_parent(self, menu_id, parent_id):
+        """Check if the parent_id would create a circular reference"""
+        if menu_id == parent_id:
+            return False
+
+        current_id = parent_id
+        while current_id is not None:
+            try:
+                menu = SysMenu.objects.get(id=current_id)
+                if menu.parent_id == menu_id:
+                    return False
+                current_id = menu.parent_id
+            except SysMenu.DoesNotExist:
+                break
+
+        return True
