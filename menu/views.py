@@ -169,3 +169,28 @@ class MenuDetailView(AdminRequiredMixin, APIView):
                 break
 
         return True
+
+
+class MenuCreateView(AdminRequiredMixin, APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def post(self, request):
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
+
+        serializer = MenuSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    "code": 200,
+                    "message": "Menu created successfully",
+                    "data": serializer.data,
+                }
+            )
+        return Response(
+            {"code": 400, "message": "Invalid data", "errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
