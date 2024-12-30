@@ -194,3 +194,30 @@ class MenuCreateView(AdminRequiredMixin, APIView):
             {"code": 400, "message": "Invalid data", "errors": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class MenuReorderView(AdminRequiredMixin, APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def post(self, request):
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
+
+        try:
+            items = request.data.get("items", [])
+            parent_id = request.data.get("parent_id")
+
+            for item in items:
+                menu = SysMenu.objects.get(id=item["id"], deleted_at__isnull=True)
+                menu.order_num = item["order_num"]
+                menu.parent_id = parent_id
+                menu.save()
+
+            return Response({"code": 200, "message": "Menu order updated successfully"})
+        except Exception as e:
+            return Response(
+                {"code": 500, "message": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
