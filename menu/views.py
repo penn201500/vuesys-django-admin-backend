@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from user.authentication import CookieJWTAuthentication
+from user.views import CustomPageNumberPagination
 from .models import SysMenu, SysRoleMenu
 from .serializers import MenuSerializer
 
@@ -21,6 +22,7 @@ class AdminRequiredMixin:
 class MenuListView(AdminRequiredMixin, APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
+    pagination_class = CustomPageNumberPagination  # Add pagination class
 
     def get(self, request):
         admin_check = self.check_admin(request)
@@ -41,17 +43,39 @@ class MenuListView(AdminRequiredMixin, APIView):
                     | Q(remark__icontains=search)
                 )
 
+            # Apply ordering
+            ordering = request.query_params.get("ordering", "order_num")
+            if ordering:
+                queryset = queryset.order_by(ordering)
+
             # Build tree structure
             menu_tree = self.build_menu_tree(queryset)
 
-            return Response({"code": 200, "message": "Success", "data": menu_tree})
+            # Apply pagination
+            paginator = self.pagination_class()
+            page = paginator.paginate_queryset(menu_tree, request)
+
+            return Response(
+                {
+                    "code": 200,
+                    "message": "Success",
+                    "data": page,
+                    "count": len(menu_tree),
+                    "page": int(request.query_params.get("page", 1)),
+                    "pageSize": int(
+                        request.query_params.get("pageSize", paginator.page_size)
+                    ),
+                }
+            )
+
         except Exception as e:
             return Response(
                 {"code": 500, "message": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    def build_menu_tree(self, queryset):
+    @staticmethod
+    def build_menu_tree(queryset):
         menu_dict = {}
         for menu in queryset:
             menu_dict[menu.id] = menu
