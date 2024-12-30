@@ -26,7 +26,7 @@ class SysMenu(models.Model):
     )
     perms = models.CharField(
         max_length=100, null=True, blank=True, verbose_name="Permission String"
-    )
+    )  # reserved field for permission control
     status = models.IntegerField(default=1, verbose_name="Status(0:disabled,1:enabled)")
     deleted_at = models.DateTimeField(
         null=True, blank=True, verbose_name="Deletion Time"
@@ -44,7 +44,7 @@ class SysMenu(models.Model):
 
     class Meta:
         db_table = "sys_menu"
-        ordering = ["order_num"]
+        ordering = ["parent_id", "order_num"]
 
 
 class SysRoleMenu(models.Model):
