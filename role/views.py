@@ -255,6 +255,11 @@ class RoleMenuView(AdminRequiredMixin, APIView):
 
     def put(self, request, pk):
         """Update role's menu items"""
+        # only admin role can update role menu items
+        admin_check = self.check_admin(request)
+        if admin_check:
+            return admin_check
+
         role = SysRole.objects.filter(pk=pk, deleted_at__isnull=True).first()
         if not role:
             return Response(
