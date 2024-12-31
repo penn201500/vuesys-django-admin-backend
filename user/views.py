@@ -383,7 +383,7 @@ class SignupView(APIView):
             )
 
 
-class UserProfileUpdateView(APIView):
+class UserProfileUpdateView(AdminRequiredMixin, APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
@@ -419,7 +419,7 @@ class UserProfileUpdateView(APIView):
         )
 
 
-class PasswordUpdateView(APIView):
+class PasswordUpdateView(AdminRequiredMixin, APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
@@ -454,7 +454,7 @@ class PasswordUpdateView(APIView):
         )
 
 
-class AvatarUpdateView(APIView):
+class AvatarUpdateView(AdminRequiredMixin, APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
@@ -588,7 +588,7 @@ class CustomPageNumberPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class UserListView(APIView):
+class UserListView(AdminRequiredMixin, APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
     pagination_class = CustomPageNumberPagination
@@ -819,7 +819,7 @@ class UserRoleUpdateView(APIView):
         )
 
 
-class UserProfileDetailView(APIView):
+class UserProfileDetailView(AdminRequiredMixin, APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [CookieJWTAuthentication]
 
