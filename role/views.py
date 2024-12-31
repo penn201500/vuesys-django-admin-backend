@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
+from menu.models import SysMenu, SysRoleMenu
 from user.views import CustomPageNumberPagination
 from .models import SysRole, SysUserRole
 from .serializers import SysRoleSerializer
@@ -230,3 +231,87 @@ class RoleStatusView(AdminRequiredMixin, APIView):
                 "data": serializer.data,
             }
         )
+
+
+class RoleMenuView(AdminRequiredMixin, APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def get(self, request, pk):
+        """Get role's menu items"""
+        role = SysRole.objects.filter(pk=pk, deleted_at__isnull=True).first()
+        if not role:
+            return Response(
+                {"code": 404, "message": "Role not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        menu_ids = SysRoleMenu.objects.filter(role=role).values_list(
+            "menu_id", flat=True
+        )
+        return Response(
+            {"code": 200, "data": {"role_id": role.id, "menu_ids": list(menu_ids)}}
+        )
+
+    def put(self, request, pk):
+        """Update role's menu items"""
+        role = SysRole.objects.filter(pk=pk, deleted_at__isnull=True).first()
+        if not role:
+            return Response(
+                {"code": 404, "message": "Role not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        menu_ids = request.data.get("menu_ids", [])
+        # Clear existing and create new
+        SysRoleMenu.objects.filter(role=role).delete()
+        SysRoleMenu.objects.bulk_create(
+            [SysRoleMenu(role=role, menu_id=menu_id) for menu_id in menu_ids]
+        )
+
+        return Response({"code": 200, "message": "Menu items updated successfully"})
+
+
+class MenuTreeView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def build_tree(self, menus):
+        menu_map = {menu.id: menu for menu in menus}
+        tree = []
+
+        for menu in menus:
+            if menu.parent_id is None or menu.parent_id == 0:
+                # Root level menu
+                tree.append(self._format_menu_item(menu, menu_map))
+        return tree
+
+    def _format_menu_item(self, menu, menu_map):
+        children = []
+        for potential_child in menu_map.values():
+            if potential_child.parent_id == menu.id:
+                children.append(self._format_menu_item(potential_child, menu_map))
+
+        menu_dict = {
+            "id": menu.id,
+            "name": menu.name,
+        }
+        if children:
+            menu_dict["children"] = children
+        return menu_dict
+
+    def get(self, request):
+        try:
+            menus = SysMenu.objects.filter(status=1, deleted_at__isnull=True).order_by(
+                "order_num"
+            )
+            tree = self.build_tree(menus)
+            return Response(
+                {
+                    "code": 200,
+                    "message": "Menu tree retrieved successfully",
+                    "data": tree,
+                }
+            )
+        except Exception as e:
+            return Response({"code": 500, "message": str(e)}, status=500)
