@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from user.authentication import CookieJWTAuthentication
-from user.views import CustomPageNumberPagination
+from user.views import CustomPageNumberPagination, User
 from .models import SysMenu, SysRoleMenu
 from .serializers import MenuSerializer
 
@@ -245,3 +245,56 @@ class MenuReorderView(AdminRequiredMixin, APIView):
                 {"code": 500, "message": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
+class UserMenuView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [CookieJWTAuthentication]
+
+    def get_user_menus(self, user):
+        role_ids = user.roles.values_list("id", flat=True)
+        menu_ids = (
+            SysRoleMenu.objects.filter(role_id__in=role_ids)
+            .values_list("menu_id", flat=True)
+            .distinct()
+        )
+
+        menus = SysMenu.objects.filter(
+            id__in=menu_ids, status=1, deleted_at__isnull=True
+        ).order_by("order_num")
+
+        return self.build_menu_tree(menus)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            user_id = kwargs.get("user_id")
+            user = request.user if user_id is None else User.objects.get(id=user_id)
+
+            tree = self.get_user_menus(user)
+
+            return Response(
+                {
+                    "code": 200,
+                    "message": "User menus retrieved successfully",
+                    "data": tree,
+                }
+            )
+        except User.DoesNotExist:
+            return Response({"code": 404, "message": "User not found"}, status=404)
+        except Exception as e:
+            return Response({"code": 500, "message": str(e)}, status=500)
+
+    def build_menu_tree(self, menus):
+        menu_dict = {}
+        for menu in menus:
+            menu_dict[menu.id] = MenuSerializer(menu).data
+            menu_dict[menu.id]["children"] = []
+
+        tree = []
+        for menu in menus:
+            if menu.parent_id and menu.parent_id in menu_dict:
+                menu_dict[menu.parent_id]["children"].append(menu_dict[menu.id])
+            else:
+                tree.append(menu_dict[menu.id])
+
+        return tree
