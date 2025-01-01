@@ -1,6 +1,5 @@
 from functools import wraps
 from .models import AuditLog
-from django.utils import timezone
 
 
 def audit_log(module, resource_type):
