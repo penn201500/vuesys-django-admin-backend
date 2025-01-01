@@ -1,7 +1,8 @@
+from django.conf import settings
 import os
 import time
 from logging.handlers import RotatingFileHandler
-from datetime import datetime
+from django.utils import timezone
 
 
 class TimedRotatingFileHandlerWithPrefix(RotatingFileHandler):
@@ -13,14 +14,13 @@ class TimedRotatingFileHandlerWithPrefix(RotatingFileHandler):
         self,
         filename,
         mode="a",
-        maxBytes=50 * 1024 * 1024,
-        backupCount=7,
-        encoding=None,
+        maxBytes=settings.LOG_FILE_MAX_SIZE,
+        backupCount=settings.LOG_FILE_BACKUP_COUNT,
+        encoding=settings.LOG_FILE_ENCODING,
         delay=False,
         errors=None,
     ):
         self.baseFilename = filename
-        self.currentTimestamp = int(time.time())
         filename = self._get_filename_with_timestamp()
         super().__init__(filename, mode, maxBytes, backupCount, encoding, delay, errors)
 
@@ -29,10 +29,8 @@ class TimedRotatingFileHandlerWithPrefix(RotatingFileHandler):
         dirname = os.path.dirname(self.baseFilename)
         basename = os.path.basename(self.baseFilename)
         name, ext = os.path.splitext(basename)
-        timestamp = datetime.fromtimestamp(self.currentTimestamp)
-        return os.path.join(
-            dirname, f"{name}_{timestamp.strftime('%Y%m%d_%H%M%S')}{ext}"
-        )
+        current_date = timezone.localtime().strftime("%Y%m%d")
+        return os.path.join(dirname, f"{name}_{current_date}{ext}")
 
     def doRollover(self):
         """
@@ -42,26 +40,31 @@ class TimedRotatingFileHandlerWithPrefix(RotatingFileHandler):
             self.stream.close()
             self.stream = None
 
-        # Update timestamp for new file
-        self.currentTimestamp = int(time.time())
-        self.baseFilename = self._get_filename_with_timestamp()
-
         if self.backupCount > 0:
             # Find and remove old log files if exceeding backupCount
             log_dir = os.path.dirname(self.baseFilename)
             base_name = os.path.basename(self.baseFilename)
             name, ext = os.path.splitext(base_name)
-            name = name.split("_")[0]  # Get base name without timestamp
+            name = name.split("_")[0]  # Get base name without date
 
-            # List all matching log files
-            files = [
-                f for f in os.listdir(log_dir) if f.startswith(name) and f.endswith(ext)
-            ]
+            # List all matching log files with creation time
+            files = []
+            for filename in os.listdir(log_dir):
+                if filename.startswith(name) and filename.endswith(ext):
+                    file_path = os.path.join(log_dir, filename)
+                    files.append((os.path.getctime(file_path), file_path))
+
+            # Sort by creation time and remove oldest
             files.sort(reverse=True)
 
             # Remove the oldest files if exceeding backupCount
-            for old_log in files[self.backupCount :]:
-                os.remove(os.path.join(log_dir, old_log))
+            for _, filepath in files[self.backupCount :]:
+                try:
+                    os.remove(filepath)
+                except OSError as e:
+                    import sys
+
+                    print(f"Error removing log file {filepath}: {e}", file=sys.stderr)
 
         if not self.delay:
             self.stream = self._open()

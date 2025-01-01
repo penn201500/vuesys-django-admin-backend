@@ -200,8 +200,15 @@ RATE_LIMITS = {
 
 
 # Logging configuration
+# Create log directory if it doesn't exist
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)
 
-# Logging configuration
+# Optional: Define log-related settings for easy configuration
+LOG_FILE_MAX_SIZE = 10 * 1024 * 1024  # 10 MB
+LOG_FILE_BACKUP_COUNT = 10
+LOG_FILE_ENCODING = "utf-8"
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -211,26 +218,22 @@ LOGGING = {
         },
     },
     "handlers": {
-        "security": {
+        "app_file": {
             "()": "core.logging.handlers.TimedRotatingFileHandlerWithPrefix",
-            "filename": BASE_DIR / "logs/security/security.log",
+            "filename": BASE_DIR / "logs/app.log",
             "formatter": "json",
-            "maxBytes": 10 * 1024 * 1024,  # 10 MB
-            "backupCount": 10,
+            "maxBytes": LOG_FILE_MAX_SIZE,  # 10 MB
+            "backupCount": LOG_FILE_BACKUP_COUNT,
+            "encoding": LOG_FILE_ENCODING,
         },
-        "operation": {
+        "error_file": {
             "()": "core.logging.handlers.TimedRotatingFileHandlerWithPrefix",
-            "filename": BASE_DIR / "logs/operation/operation.log",
+            "filename": BASE_DIR / "logs/error.log",
             "formatter": "json",
-            "maxBytes": 10 * 1024 * 1024,  # 10 MB
-            "backupCount": 10,
-        },
-        "system": {
-            "()": "core.logging.handlers.TimedRotatingFileHandlerWithPrefix",
-            "filename": BASE_DIR / "logs/system/system.log",
-            "formatter": "json",
-            "maxBytes": 10 * 1024 * 1024,  # 10 MB
-            "backupCount": 10,
+            "maxBytes": LOG_FILE_MAX_SIZE,  # 10 MB
+            "backupCount": LOG_FILE_BACKUP_COUNT,
+            "level": "ERROR",
+            "encoding": LOG_FILE_ENCODING,
         },
         "console": {
             "class": "logging.StreamHandler",
@@ -238,23 +241,36 @@ LOGGING = {
         },
     },
     "loggers": {
-        "django.security": {
-            "handlers": ["security", "console"],
+        # Root logger - catches all unhandled logs
+        "": {
+            "handlers": ["app_file", "error_file", "console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        # Django's internal loggers
+        "django": {
+            "handlers": ["app_file", "error_file", "console"],
             "level": "INFO",
             "propagate": False,
         },
         "django.request": {
-            "handlers": ["operation", "console"],
+            "handlers": ["app_file", "error_file", "console"],
             "level": "INFO",
             "propagate": False,
         },
-        "django": {
-            "handlers": ["system", "console"],
+        # Application loggers
+        "user": {
+            "handlers": ["app_file", "error_file", "console"],
             "level": "INFO",
             "propagate": False,
         },
-        "core.audit": {
-            "handlers": ["operation", "console"],
+        "role": {
+            "handlers": ["app_file", "error_file", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "menu": {
+            "handlers": ["app_file", "error_file", "console"],
             "level": "INFO",
             "propagate": False,
         },
@@ -265,13 +281,3 @@ LOGGING = {
 MIDDLEWARE += [
     "core.logging.middleware.RequestLoggingMiddleware",
 ]
-
-# Create log directories if they don't exist
-LOG_DIRS = [
-    BASE_DIR / "logs/security",
-    BASE_DIR / "logs/operation",
-    BASE_DIR / "logs/system",
-]
-
-for dir_path in LOG_DIRS:
-    dir_path.mkdir(parents=True, exist_ok=True)

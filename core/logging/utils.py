@@ -7,7 +7,7 @@ def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
 
 
-def log_operation(logger_name: str, operation: str):
+def log_operation(logger_name: str, operation: str, **extra_context):
     """
     Decorator to log operations with additional context
 
@@ -29,25 +29,26 @@ def log_operation(logger_name: str, operation: str):
                     request.user.id if request and hasattr(request, "user") else None
                 )
 
-                # Log operation start
-                extra = {
+                # Combine base context with extra context
+                context = {
                     "operation": operation,
                     "user_id": user_id,
+                    **extra_context,  # Add any extra context passed to decorator
                 }
-                logger.info(f"Starting operation: {operation}", extra=extra)
+                logger.info(f"Starting operation: {operation}", extra=context)
 
                 # Execute function
                 result = func(*args, **kwargs)
 
                 # Log successful completion
-                logger.info(f"Operation completed: {operation}", extra=extra)
+                logger.info(f"Operation completed: {operation}", extra=context)
                 return result
 
             except Exception as e:
                 # Log error
                 logger.error(
                     f"Operation failed: {operation}",
-                    extra={"operation": operation, "error": str(e)},
+                    extra={"operation": operation, "error": str(e), **extra_context},
                     exc_info=True,
                 )
                 raise

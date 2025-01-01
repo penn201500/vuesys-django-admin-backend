@@ -1,51 +1,72 @@
 import json
 import logging
-from datetime import datetime
+from django.utils import timezone
 
 
 class JSONFormatter(logging.Formatter):
     """
-    Formatter that outputs JSON strings after gathering all the log record args
+    Formatter that outputs JSON structured logs with all necessary context
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.default_fields = ["name", "levelname", "pathname", "lineno"]
+        self.default_fields = {
+            "name",
+            "levelname",
+            "pathname",
+            "lineno",
+            "msg",
+            "args",
+            "exc_info",
+            "exc_text",
+        }
 
     def format(self, record: logging.LogRecord) -> str:
-        """
-        Format the log record as JSON
-        """
+        """Format log record as JSON with structured data"""
+        # Basic log data
         message_dict = {
-            "timestamp": datetime.fromtimestamp(record.created).isoformat(),
+            "timestamp": timezone.localtime().isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
+            # Source location
+            "source": {
+                "file": record.pathname,
+                "line": record.lineno,
+                "function": record.funcName,
+            },
         }
-
-        # Add extra fields if present
-        if hasattr(record, "user_id"):
-            message_dict["user_id"] = record.user_id
-        if hasattr(record, "ip_address"):
-            message_dict["ip_address"] = record.ip_address
-        if hasattr(record, "method"):
-            message_dict["method"] = record.method
-        if hasattr(record, "path"):
-            message_dict["path"] = record.path
-        if hasattr(record, "status_code"):
-            message_dict["status_code"] = record.status_code
 
         # Add exception info if present
         if record.exc_info:
-            message_dict["exception"] = self.formatException(record.exc_info)
+            message_dict["error"] = {
+                "type": record.exc_info[0].__name__,
+                "message": str(record.exc_info[1]),
+                "traceback": self.formatException(record.exc_info),
+            }
 
-        # Add any extra attributes from the record
+        # Add request info if available
+        if hasattr(record, "request"):
+            message_dict["request"] = {
+                "method": getattr(record, "method", None),
+                "path": getattr(record, "path", None),
+                "user_id": getattr(record, "user_id", None),
+                "ip": getattr(record, "ip_address", None),
+            }
+
+        # Add any extra fields
+        extras = {}
         for key, value in record.__dict__.items():
             if key not in self.default_fields and not key.startswith("_"):
                 try:
-                    json.dumps(value)  # Check if value is JSON serializable
-                    message_dict[key] = value
+                    # Try default JSON serialization
+                    json.dumps(value)
+                    extras[key] = value
                 except (TypeError, ValueError):
-                    message_dict[key] = str(value)
+                    # Fallback to string representation
+                    extras[key] = str(value)
+
+        if extras:
+            message_dict["extra"] = extras
 
         return json.dumps(message_dict)
