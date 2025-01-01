@@ -35,6 +35,9 @@ from .serializers import (
 )
 from rest_framework.pagination import PageNumberPagination
 
+from core.logging.utils import log_operation, get_logger
+
+logger = get_logger(__name__)
 User = get_user_model()  # Django auth method
 
 
@@ -58,9 +61,11 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
     permission_classes = [AllowAny]
 
+    @log_operation("core.audit", "login")
     @method_decorator(rate_limit_user(rate=settings.RATE_LIMIT_LOGIN, method="POST"))
     def post(self, request, *args, **kwargs):
         if getattr(request, "limited", False):
+            logger.error("Too many requests", extra={"request": request})
             return Response(
                 {"code": 429, "message": "Too many requests, please try again later."},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -95,6 +100,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             serializer = UserProfileSerializer(user)
             user_data = serializer.data
 
+            logger.info("Login successful", extra={"user_id": user.id})
             response = Response(
                 {
                     "code": 200,
@@ -116,6 +122,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
         except serializers.ValidationError:
             # Customize the error response
+            logger.info("Invalid username or password", extra={"request": request})
             return Response(
                 {"code": 401, "message": "Invalid username or password"},
                 status=status.HTTP_401_UNAUTHORIZED,
