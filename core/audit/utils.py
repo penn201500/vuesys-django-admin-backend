@@ -22,6 +22,9 @@ def audit_log(module, resource_type):
                 response = func(self, request, *args, **kwargs)
 
                 if request.method in method_to_action:
+                    # Check if response indicates success (2xx status codes)
+                    is_success = 200 <= response.status_code < 300
+
                     resource_id = kwargs.get("pk") or getattr(response, "data", {}).get(
                         "id"
                     )
@@ -30,6 +33,7 @@ def audit_log(module, resource_type):
                         module == "USER"
                         and resource_type == "USER"
                         and request.method == "POST"
+                        and is_success
                     ):
                         user_data = response.data.get("data", {})
                         username = user_data.get("username", "system")
@@ -47,6 +51,12 @@ def audit_log(module, resource_type):
                             else None
                         )
 
+                    # Determine message based on response status
+                    if is_success:
+                        message = f"Successfully {method_to_action[request.method].lower()}d {resource_type}"
+                    else:
+                        message = f"Failed to {method_to_action[request.method].lower()} {resource_type}: {response.data.get('message', '')}"
+
                     AuditLog.objects.create(
                         user=request.user if request.user.is_authenticated else None,
                         username=username,
@@ -59,10 +69,11 @@ def audit_log(module, resource_type):
                             "request_data": request.data,
                             "response_data": getattr(response, "data", None),
                             "params": request.query_params.dict(),
+                            "status_code": response.status_code,
                         },
                         ip_address=request.META.get("REMOTE_ADDR"),
                         status=True,
-                        message=f"Successfully {method_to_action[request.method].lower()}d {resource_type}",
+                        message=message,
                     )
 
                 return response
