@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "user.apps.UserConfig",
     "role.apps.RoleConfig",
     "menu.apps.MenuConfig",
+    "core.apps.CoreConfig",
 ]
 
 MIDDLEWARE = [
@@ -196,3 +197,81 @@ RATE_LIMITS = {
     "REFRESH": RATE_LIMIT_REFRESH,
     "CSRF": RATE_LIMIT_CSRF,
 }
+
+
+# Logging configuration
+
+# Logging configuration
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "()": "core.logging.formatters.JSONFormatter",
+        },
+    },
+    "handlers": {
+        "security": {
+            "()": "core.logging.handlers.TimedRotatingFileHandlerWithPrefix",
+            "filename": BASE_DIR / "logs/security/security.log",
+            "formatter": "json",
+            "maxBytes": 10 * 1024 * 1024,  # 10 MB
+            "backupCount": 10,
+        },
+        "operation": {
+            "()": "core.logging.handlers.TimedRotatingFileHandlerWithPrefix",
+            "filename": BASE_DIR / "logs/operation/operation.log",
+            "formatter": "json",
+            "maxBytes": 10 * 1024 * 1024,  # 10 MB
+            "backupCount": 10,
+        },
+        "system": {
+            "()": "core.logging.handlers.TimedRotatingFileHandlerWithPrefix",
+            "filename": BASE_DIR / "logs/system/system.log",
+            "formatter": "json",
+            "maxBytes": 10 * 1024 * 1024,  # 10 MB
+            "backupCount": 10,
+        },
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        },
+    },
+    "loggers": {
+        "django.security": {
+            "handlers": ["security", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["operation", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["system", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "core.audit": {
+            "handlers": ["operation", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
+# Add RequestLoggingMiddleware to MIDDLEWARE
+MIDDLEWARE += [
+    "core.logging.middleware.RequestLoggingMiddleware",
+]
+
+# Create log directories if they don't exist
+LOG_DIRS = [
+    BASE_DIR / "logs/security",
+    BASE_DIR / "logs/operation",
+    BASE_DIR / "logs/system",
+]
+
+for dir_path in LOG_DIRS:
+    dir_path.mkdir(parents=True, exist_ok=True)
