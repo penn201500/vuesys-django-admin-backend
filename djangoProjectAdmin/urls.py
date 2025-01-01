@@ -21,9 +21,15 @@ from django.urls import path, include
 from rest_framework_simplejwt import views as jwt_views
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework.routers import DefaultRouter
+from core.audit.views import AuditLogViewSet
+
+router = DefaultRouter()
+router.register(r"audit/logs", AuditLogViewSet, basename="audit-logs")
 
 
 urlpatterns = i18n_patterns(
+    path("api/", include(router.urls)),
     path("admin/", admin.site.urls),
     # JWT token endpoints
     path(
