@@ -37,6 +37,8 @@ from rest_framework.pagination import PageNumberPagination
 
 from core.logging.utils import log_operation, get_logger
 
+from core.audit.utils import audit_log
+
 logger = get_logger(__name__)
 User = get_user_model()  # Django auth method
 
@@ -325,6 +327,7 @@ class GetCSRFTokenView(APIView):
 class SignupView(APIView):
     permission_classes = [AllowAny]
 
+    @audit_log(module="USER", resource_type="USER")
     @method_decorator(rate_limit_user(rate=settings.RATE_LIMIT_LOGIN, method="POST"))
     def post(self, request):
         if getattr(request, "limited", False):
