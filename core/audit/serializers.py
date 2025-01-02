@@ -4,6 +4,8 @@ from .models import AuditLog
 
 class AuditLogSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
+    # Convert GenericIPAddressField to CharField to avoid validation issues
+    ip_address = serializers.CharField(allow_null=True)
 
     class Meta:
         model = AuditLog
