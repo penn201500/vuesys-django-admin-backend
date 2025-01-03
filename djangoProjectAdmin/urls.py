@@ -21,35 +21,34 @@ from django.urls import path, include
 from rest_framework_simplejwt import views as jwt_views
 from django.conf import settings
 from django.conf.urls.static import static
-from rest_framework.routers import DefaultRouter
 from core.audit.views import AuditLogViewSet
 
-router = DefaultRouter()
-router.register(r"audit/logs", AuditLogViewSet, basename="audit-logs")
 
-
-urlpatterns = i18n_patterns(
-    path("api/", include(router.urls)),
-    path("admin/", admin.site.urls),
+# API URL patterns
+api_patterns = [
     # JWT token endpoints
+    path("token/", jwt_views.TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("token/refresh/", jwt_views.TokenRefreshView.as_view(), name="token_refresh"),
+    path("token/verify/", jwt_views.TokenVerifyView.as_view(), name="token_verify"),
     path(
-        "api/token/", jwt_views.TokenObtainPairView.as_view(), name="token_obtain_pair"
-    ),
-    path(
-        "api/token/refresh/", jwt_views.TokenRefreshView.as_view(), name="token_refresh"
-    ),
-    # Optional: For token verification and blacklisting
-    path("api/token/verify/", jwt_views.TokenVerifyView.as_view(), name="token_verify"),
-    path(
-        "api/token/blacklist/",
+        "token/blacklist/",
         jwt_views.TokenBlacklistView.as_view(),
         name="token_blacklist",
     ),
+    # App endpoints
     path("user/", include("user.urls")),
     path("role/", include("role.urls")),
     path("menu/", include("menu.urls")),
+    path("audit/logs/", AuditLogViewSet.as_view({"get": "list"}), name="audit-logs"),
+]
+
+# Main URL patterns with language support
+urlpatterns = i18n_patterns(
+    # Admin interface
+    path("admin/", admin.site.urls),
+    # API endpoints - all under /api/
+    path("api/", include(api_patterns)),
 )
 
-# Serve media files only during development
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
