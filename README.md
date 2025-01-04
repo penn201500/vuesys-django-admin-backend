@@ -3,6 +3,8 @@
 ## Overview
 This project is for VueSys admin dashboard, built with Django and Django REST Framework. It provides API for user management, authentication, role-based access control, and comprehensive audit logging. Featuring secure token handling, HTTPS support, and activity tracking.
 
+Frontend: [VueSys - Admin Dashboard Frontend](https://github.com/penn201500/vuesys-vue3-admin-frontend)
+
 ## Features
 - 🔐 Authentication System
   - JWT-based token authentication via HttpOnly cookies
