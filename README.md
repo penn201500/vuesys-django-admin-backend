@@ -1,54 +1,61 @@
 # VueSys - Admin Dashboard Backend
 
+English | [简体中文](./README_CN.md)
+
 ## Overview
-This project is for VueSys admin dashboard, built with Django and Django REST Framework. It provides API for user management, authentication, role-based access control, and comprehensive audit logging. Featuring secure token handling, HTTPS support, and activity tracking.
+
+This project is for VueSys admin dashboard, built with Django and Django REST Framework. It provides API for user
+management, authentication, role-based access control, and comprehensive audit logging. Featuring secure token handling,
+HTTPS support, and activity tracking.
 
 Frontend: [VueSys - Admin Dashboard Frontend](https://github.com/penn201500/vuesys-vue3-admin-frontend)
 
 ![VueSys - Admin Dashboard](./vuesys.png)
 
 ## Features
+
 - 🔐 Authentication System
-  - JWT-based token authentication via HttpOnly cookies
-  - Secure token refresh mechanism
-  - Access and refresh token rotation
-  - Session management
-  - CSRF protection
-  - HTTPS/SSL support
-  - Rate limiting
-  - Security headers configuration
+    - JWT-based token authentication via HttpOnly cookies
+    - Secure token refresh mechanism
+    - Access and refresh token rotation
+    - Session management
+    - CSRF protection
+    - HTTPS/SSL support
+    - Rate limiting
+    - Security headers configuration
 - 👥 User Management
-  - User CRUD operations
-  - Profile management
-  - Avatar handling
-  - Password management
+    - User CRUD operations
+    - Profile management
+    - Avatar handling
+    - Password management
 - 🔑 Role-Based Access Control
-  - Role management
-  - Permission system
-  - Menu access control
+    - Role management
+    - Permission system
+    - Menu access control
 - 📝 Comprehensive Audit Logging
-  - Detailed action tracking with timestamps
-  - User activity monitoring
-  - [ ] System changes logging
-  - IP address tracking
-  - Request/response details
-  - Success/failure status
-  - Searchable audit history
-  - [ ] Exportable audit reports
+    - Detailed action tracking with timestamps
+    - User activity monitoring
+    - [ ] System changes logging
+    - IP address tracking
+    - Request/response details
+    - Success/failure status
+    - Searchable audit history
+    - [ ] Exportable audit reports
 - 📊 Data Handling
-  - Server-side pagination
-  - Dynamic sorting
-  - Filtered searches
-  - Customizable page sizes
+    - Server-side pagination
+    - Dynamic sorting
+    - Filtered searches
+    - Customizable page sizes
 - 🌐 Internationalization
-  - Multi-language support (locales files not finished yet)
-  - URL-based language switching
+    - Multi-language support (locales files not finished yet)
+    - URL-based language switching
 - 🔒 Security Features
-  - Rate limiting
-  - Token blacklisting
-  - Secure cookie handling
+    - Rate limiting
+    - Token blacklisting
+    - Secure cookie handling
 
 ## Tech Stack
+
 - **Django** - Web framework
 - **Django REST Framework** - API framework
 - **MySQL** - Database
@@ -57,6 +64,7 @@ Frontend: [VueSys - Admin Dashboard Frontend](https://github.com/penn201500/vues
 - **PyMySQL** - MySQL database adapter
 
 ## Prerequisites
+
 - Python 3.12+
 - MySQL 8.0+
 - Django 5.1
@@ -66,24 +74,28 @@ Frontend: [VueSys - Admin Dashboard Frontend](https://github.com/penn201500/vues
 ## Installation
 
 1. Clone the repository
+
 ```bash
 git clone https://github.com/penn201500/vuesys-django-admin-backend.git
 cd vuesys-django-admin-backend
 ```
 
 2. Create and activate virtual environment
+
 ```bash
 conda create -n vuesys python=3.12.2
 conda activate vuesys
 ```
 
 3. Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
 4. Configure environment variables
-Create a `.env` file in the root directory:
+   Create a `.env` file in the root directory:
+
 ```env
 DEBUG=True
 DJANGO_SECRET_KEY=your-secret-key
@@ -102,16 +114,19 @@ RATE_LIMIT_CSRF=2/m
 ```
 
 5. Run migrations
+
 ```bash
 python manage.py migrate
 ```
 
 6. Create superuser
+
 ```bash
 python manage.py createsuperuser
 ```
 
 7. Insert records for testing
+
 ```bash
 # sys_menu.sql
 INSERT INTO vuesys.sys_menu (id, name, icon, parent_id, order_num, path, component, perms, create_time, update_time, remark, deleted_at, status) VALUES (1, 'System Management', 'system', 0, 0, '/settings', '', '', '2024-07-04 00:00:00.000000', '2024-12-30 17:30:55.882450', 'System Management Directory test', null, 1);
@@ -187,12 +202,15 @@ INSERT INTO vuesys.core_auditlog (id, username, user_email, action, module, reso
 ```
 
 8. Start development server
+
 ```bash
 python manage.py runserver
 ```
+
 ```text
 If you want to run HTTPS in your development env. Install mkcert or certbot to generate SSL files. Then run:
 ```
+
 ```bash
 python manage.py runserver_plus --cert-file ~/tmp/localhost+2.pem --key-file ~/tmp/localhost+2-key.pem
 ```
@@ -200,6 +218,7 @@ python manage.py runserver_plus --cert-file ~/tmp/localhost+2.pem --key-file ~/t
 ## Development
 
 ### Project Structure
+
 ```
 djangoProjectAdmin/
 ├── user/           # User management app
@@ -214,7 +233,9 @@ djangoProjectAdmin/
 ```
 
 ### Creating New Apps
+
 1. Create new Django app
+
 ```bash
 python manage.py startapp new_app
 ```
@@ -224,6 +245,7 @@ python manage.py startapp new_app
 4. Register URLs in app urls.py and main urls.py
 
 ### Database Migrations
+
 If models are updated.
 
 ```bash
@@ -232,7 +254,9 @@ python manage.py migrate
 ```
 
 ### Running Tests
+
 - [ ] TODO: Add test cases.
+
 ```bash
 python manage.py test
 ```
@@ -240,15 +264,17 @@ python manage.py test
 ## API
 
 Key endpoints:
+
 - `/api/user/login/` - User authentication
 - `/api/user/users/` - User management
 - `/api/role/roles/` - Role management
 - `/api/menu/menus/` - Menu management
 - `/api/audit/logs/` - Audit log
 
-
 ## Contributing
+
 1. Fork the repository or open a Pull Request
 
 ## License
+
 This project is licensed under the MIT License - see the [LICENSE](./LICENSE.md) file for details
