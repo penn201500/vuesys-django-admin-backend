@@ -5,6 +5,8 @@ This project is for VueSys admin dashboard, built with Django and Django REST Fr
 
 Frontend: [VueSys - Admin Dashboard Frontend](https://github.com/penn201500/vuesys-vue3-admin-frontend)
 
+![VueSys - Admin Dashboard](./vuesys.png)
+
 ## Features
 - 🔐 Authentication System
   - JWT-based token authentication via HttpOnly cookies
@@ -235,7 +237,7 @@ python manage.py migrate
 python manage.py test
 ```
 
-## API 
+## API
 
 Key endpoints:
 - `/api/user/login/` - User authentication
